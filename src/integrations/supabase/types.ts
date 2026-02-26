@@ -14,16 +14,266 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      daily_menus: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date: string
+          id: string
+          menu_item_id: string
+          portion_count: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date: string
+          id?: string
+          menu_item_id: string
+          portion_count?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          id?: string
+          menu_item_id?: string
+          portion_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_menus_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      distribution_records: {
+        Row: {
+          created_at: string
+          daily_menu_id: string | null
+          date: string
+          delivered_by: string | null
+          id: string
+          notes: string | null
+          portion_count: number
+          school_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          daily_menu_id?: string | null
+          date?: string
+          delivered_by?: string | null
+          id?: string
+          notes?: string | null
+          portion_count?: number
+          school_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          daily_menu_id?: string | null
+          date?: string
+          delivered_by?: string | null
+          id?: string
+          notes?: string | null
+          portion_count?: number
+          school_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "distribution_records_daily_menu_id_fkey"
+            columns: ["daily_menu_id"]
+            isOneToOne: false
+            referencedRelation: "daily_menus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distribution_records_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_items: {
+        Row: {
+          category: string
+          created_at: string
+          current_stock: number
+          id: string
+          last_restocked_at: string | null
+          min_stock: number
+          name: string
+          price_per_unit: number | null
+          supplier: string | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          current_stock?: number
+          id?: string
+          last_restocked_at?: string | null
+          min_stock?: number
+          name: string
+          price_per_unit?: number | null
+          supplier?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          current_stock?: number
+          id?: string
+          last_restocked_at?: string | null
+          min_stock?: number
+          name?: string
+          price_per_unit?: number | null
+          supplier?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      menu_items: {
+        Row: {
+          calories: number | null
+          carbs: number | null
+          category: string
+          created_at: string
+          description: string | null
+          fat: number | null
+          id: string
+          name: string
+          protein: number | null
+        }
+        Insert: {
+          calories?: number | null
+          carbs?: number | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          fat?: number | null
+          id?: string
+          name: string
+          protein?: number | null
+        }
+        Update: {
+          calories?: number | null
+          carbs?: number | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          fat?: number | null
+          id?: string
+          name?: string
+          protein?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+          kitchen_name: string | null
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string
+          id?: string
+          kitchen_name?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
+          kitchen_name?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      schools: {
+        Row: {
+          address: string | null
+          contact_person: string | null
+          contact_phone: string | null
+          created_at: string
+          id: string
+          name: string
+          student_count: number
+        }
+        Insert: {
+          address?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          student_count?: number
+        }
+        Update: {
+          address?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          student_count?: number
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "operator"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +400,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "operator"],
+    },
   },
 } as const
