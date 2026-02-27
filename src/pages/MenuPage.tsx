@@ -1,13 +1,23 @@
-import { UtensilsCrossed, Plus } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { UtensilsCrossed, Plus, Pencil, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { format, addDays } from "date-fns";
-import { id as localeId } from "date-fns/locale";
+import { toast } from "sonner";
+import type { Tables } from "@/integrations/supabase/types";
+import MenuItemDialog from "@/components/MenuItemDialog";
+import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
 
 export default function MenuPage() {
+  const qc = useQueryClient();
   const today = format(new Date(), "yyyy-MM-dd");
   const tomorrow = format(addDays(new Date(), 1), "yyyy-MM-dd");
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editItem, setEditItem] = useState<Tables<"menu_items"> | null>(null);
+  const [deleteItem, setDeleteItem] = useState<Tables<"menu_items"> | null>(null);
 
   const { data: dailyMenus, isLoading: loadingDaily } = useQuery({
     queryKey: ["daily-menus", today, tomorrow],
@@ -25,24 +35,30 @@ export default function MenuPage() {
   const { data: allMenuItems, isLoading: loadingItems } = useQuery({
     queryKey: ["menu-items"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("menu_items")
-        .select("*")
-        .order("category")
-        .order("name");
+      const { data, error } = await supabase.from("menu_items").select("*").order("category").order("name");
       if (error) throw error;
       return data;
     },
   });
 
-  // Group daily menus by date
   const todayMenus = dailyMenus?.filter((m) => m.date === today) ?? [];
   const tomorrowMenus = dailyMenus?.filter((m) => m.date === tomorrow) ?? [];
-
   const menuCards = [
     ...todayMenus.map((m) => ({ ...m, label: "Hari Ini" })),
     ...tomorrowMenus.map((m) => ({ ...m, label: "Besok" })),
   ];
+
+  const handleDelete = async () => {
+    if (!deleteItem) return;
+    const { error } = await supabase.from("menu_items").delete().eq("id", deleteItem.id);
+    if (error) {
+      toast.error(error.message);
+      throw error;
+    }
+    toast.success("Menu berhasil dihapus");
+    qc.invalidateQueries({ queryKey: ["menu-items"] });
+    qc.invalidateQueries({ queryKey: ["daily-menus"] });
+  };
 
   return (
     <div className="space-y-6">
@@ -50,17 +66,14 @@ export default function MenuPage() {
       <div>
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-foreground">Menu Hari Ini & Besok</h3>
-          <button className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors">
-            <Plus className="h-3.5 w-3.5" />
-            Tambah Menu
-          </button>
+          <Button size="sm" onClick={() => { setEditItem(null); setDialogOpen(true); }}>
+            <Plus className="h-3.5 w-3.5 mr-1" /> Tambah Menu
+          </Button>
         </div>
 
         {loadingDaily ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-48 rounded-xl" />
-            ))}
+            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-48 rounded-xl" />)}
           </div>
         ) : menuCards.length === 0 ? (
           <div className="rounded-xl border border-border bg-card p-8 text-center">
@@ -72,25 +85,17 @@ export default function MenuPage() {
             {menuCards.map((item, i) => {
               const mi = item.menu_items;
               return (
-                <div
-                  key={item.id}
-                  className="rounded-xl border border-border bg-card p-5 shadow-sm opacity-0 animate-fade-in"
-                  style={{ animationDelay: `${i * 100}ms` }}
-                >
+                <div key={item.id} className="rounded-xl border border-border bg-card p-5 shadow-sm opacity-0 animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
                         <UtensilsCrossed className="h-4 w-4 text-primary" />
                       </div>
-                      <span className="text-xs font-medium text-muted-foreground">
-                        {item.label} · {mi?.category}
-                      </span>
+                      <span className="text-xs font-medium text-muted-foreground">{item.label} · {mi?.category}</span>
                     </div>
                   </div>
                   <p className="text-sm font-medium text-foreground mb-1">{mi?.name}</p>
-                  {mi?.description && (
-                    <p className="text-xs text-muted-foreground mb-3">{mi.description}</p>
-                  )}
+                  {mi?.description && <p className="text-xs text-muted-foreground mb-3">{mi.description}</p>}
                   <div className="grid grid-cols-4 gap-2 text-center">
                     {[
                       { label: "Kalori", val: mi?.calories ?? 0 },
@@ -104,9 +109,7 @@ export default function MenuPage() {
                       </div>
                     ))}
                   </div>
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    Target: {item.portion_count.toLocaleString("id")} porsi
-                  </p>
+                  <p className="mt-3 text-xs text-muted-foreground">Target: {item.portion_count.toLocaleString("id")} porsi</p>
                 </div>
               );
             })}
@@ -118,9 +121,7 @@ export default function MenuPage() {
       <div className="rounded-xl border border-border bg-card p-5 shadow-sm opacity-0 animate-fade-in" style={{ animationDelay: "400ms" }}>
         <h3 className="mb-4 text-sm font-semibold text-foreground">Katalog Menu</h3>
         {loadingItems ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 rounded" />)}
-          </div>
+          <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 rounded" />)}</div>
         ) : !allMenuItems?.length ? (
           <p className="text-sm text-muted-foreground text-center py-4">Belum ada item menu</p>
         ) : (
@@ -134,21 +135,30 @@ export default function MenuPage() {
                   <th className="pb-3 text-right text-xs font-semibold text-muted-foreground">Protein</th>
                   <th className="pb-3 text-right text-xs font-semibold text-muted-foreground">Lemak</th>
                   <th className="pb-3 text-right text-xs font-semibold text-muted-foreground">Karbo</th>
+                  <th className="pb-3 text-center text-xs font-semibold text-muted-foreground">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {allMenuItems.map((item) => (
-                  <tr key={item.id} className="border-b border-border/50 last:border-0">
+                  <tr key={item.id} className="border-b border-border/50 last:border-0 hover:bg-secondary/20 transition-colors">
                     <td className="py-3 font-medium text-foreground">{item.name}</td>
                     <td className="py-3">
-                      <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
-                        {item.category}
-                      </span>
+                      <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">{item.category}</span>
                     </td>
                     <td className="py-3 text-right text-foreground">{item.calories} kkal</td>
                     <td className="py-3 text-right text-muted-foreground">{item.protein}g</td>
                     <td className="py-3 text-right text-muted-foreground">{item.fat}g</td>
                     <td className="py-3 text-right text-muted-foreground">{item.carbs}g</td>
+                    <td className="py-3 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditItem(item); setDialogOpen(true); }}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteItem(item)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -156,6 +166,15 @@ export default function MenuPage() {
           </div>
         )}
       </div>
+
+      <MenuItemDialog open={dialogOpen} onOpenChange={setDialogOpen} item={editItem} />
+      <DeleteConfirmDialog
+        open={!!deleteItem}
+        onOpenChange={(o) => !o && setDeleteItem(null)}
+        title="Hapus Menu"
+        description={`Apakah Anda yakin ingin menghapus "${deleteItem?.name}"? Tindakan ini tidak dapat dibatalkan.`}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
