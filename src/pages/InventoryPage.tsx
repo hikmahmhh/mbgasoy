@@ -1,32 +1,34 @@
-import { Package, AlertTriangle, Plus, Search } from "lucide-react";
+import { Package, AlertTriangle, Search } from "lucide-react";
 import { useState } from "react";
-
-const inventory = [
-  { id: 1, nama: "Beras", stok: 180, satuan: "kg", min: 50, harga: 14000, kategori: "Pokok" },
-  { id: 2, nama: "Ayam Potong", stok: 45, satuan: "kg", min: 30, harga: 38000, kategori: "Protein" },
-  { id: 3, nama: "Telur", stok: 40, satuan: "butir", min: 100, harga: 2500, kategori: "Protein" },
-  { id: 4, nama: "Bayam", stok: 25, satuan: "ikat", min: 20, harga: 5000, kategori: "Sayur" },
-  { id: 5, nama: "Ikan Tongkol", stok: 30, satuan: "kg", min: 20, harga: 32000, kategori: "Protein" },
-  { id: 6, nama: "Minyak Goreng", stok: 15, satuan: "liter", min: 10, harga: 18000, kategori: "Pokok" },
-  { id: 7, nama: "Kangkung", stok: 18, satuan: "ikat", min: 15, harga: 3000, kategori: "Sayur" },
-  { id: 8, nama: "Pisang", stok: 60, satuan: "sisir", min: 30, harga: 15000, kategori: "Buah" },
-  { id: 9, nama: "Gula Pasir", stok: 8, satuan: "kg", min: 10, harga: 16000, kategori: "Pokok" },
-  { id: 10, nama: "Susu UHT", stok: 120, satuan: "kotak", min: 50, harga: 5500, kategori: "Minuman" },
-];
-
-const categories = ["Semua", "Pokok", "Protein", "Sayur", "Buah", "Minuman"];
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function InventoryPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Semua");
 
+  const { data: inventory = [], isLoading } = useQuery({
+    queryKey: ["inventory-items"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("inventory_items")
+        .select("*")
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const categories = ["Semua", ...Array.from(new Set(inventory.map((i) => i.category)))];
+
   const filtered = inventory.filter((item) => {
-    const matchSearch = item.nama.toLowerCase().includes(search.toLowerCase());
-    const matchCat = category === "Semua" || item.kategori === category;
+    const matchSearch = item.name.toLowerCase().includes(search.toLowerCase());
+    const matchCat = category === "Semua" || item.category === category;
     return matchSearch && matchCat;
   });
 
-  const lowStock = inventory.filter((i) => i.stok <= i.min);
+  const lowStock = inventory.filter((i) => Number(i.current_stock) <= Number(i.min_stock));
 
   return (
     <div className="space-y-6">
@@ -39,7 +41,7 @@ export default function InventoryPage() {
               {lowStock.length} item stok rendah
             </p>
             <p className="text-xs text-muted-foreground">
-              {lowStock.map((i) => i.nama).join(", ")} perlu restock segera
+              {lowStock.map((i) => i.name).join(", ")} perlu restock segera
             </p>
           </div>
         </div>
@@ -76,53 +78,67 @@ export default function InventoryPage() {
 
       {/* Table */}
       <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden opacity-0 animate-fade-in" style={{ animationDelay: "200ms" }}>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-secondary/30">
-                <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Bahan</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Kategori</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground">Stok</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground">Min. Stok</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground">Harga/Satuan</th>
-                <th className="px-5 py-3 text-center text-xs font-semibold text-muted-foreground">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((item) => {
-                const isLow = item.stok <= item.min;
-                return (
-                  <tr key={item.id} className="border-b border-border/50 last:border-0 hover:bg-secondary/20 transition-colors">
-                    <td className="px-5 py-3 font-medium text-foreground">{item.nama}</td>
-                    <td className="px-5 py-3">
-                      <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
-                        {item.kategori}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3 text-right font-semibold text-foreground">
-                      {item.stok} {item.satuan}
-                    </td>
-                    <td className="px-5 py-3 text-right text-muted-foreground">
-                      {item.min} {item.satuan}
-                    </td>
-                    <td className="px-5 py-3 text-right text-muted-foreground">
-                      Rp {item.harga.toLocaleString("id")}
-                    </td>
-                    <td className="px-5 py-3 text-center">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                          isLow ? "bg-destructive/10 text-destructive" : "bg-success/10 text-success"
-                        }`}
-                      >
-                        {isLow ? "Rendah" : "Aman"}
-                      </span>
+        {isLoading ? (
+          <div className="p-5 space-y-3">
+            {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-10 rounded" />)}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-secondary/30">
+                  <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Bahan</th>
+                  <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Kategori</th>
+                  <th className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground">Stok</th>
+                  <th className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground">Min. Stok</th>
+                  <th className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground">Harga/Satuan</th>
+                  <th className="px-5 py-3 text-center text-xs font-semibold text-muted-foreground">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-5 py-8 text-center text-sm text-muted-foreground">
+                      {inventory.length === 0 ? "Belum ada data inventaris" : "Tidak ada hasil pencarian"}
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  filtered.map((item) => {
+                    const isLow = Number(item.current_stock) <= Number(item.min_stock);
+                    return (
+                      <tr key={item.id} className="border-b border-border/50 last:border-0 hover:bg-secondary/20 transition-colors">
+                        <td className="px-5 py-3 font-medium text-foreground">{item.name}</td>
+                        <td className="px-5 py-3">
+                          <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
+                            {item.category}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-right font-semibold text-foreground">
+                          {Number(item.current_stock)} {item.unit}
+                        </td>
+                        <td className="px-5 py-3 text-right text-muted-foreground">
+                          {Number(item.min_stock)} {item.unit}
+                        </td>
+                        <td className="px-5 py-3 text-right text-muted-foreground">
+                          Rp {Number(item.price_per_unit ?? 0).toLocaleString("id")}
+                        </td>
+                        <td className="px-5 py-3 text-center">
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                              isLow ? "bg-destructive/10 text-destructive" : "bg-success/10 text-success"
+                            }`}
+                          >
+                            {isLow ? "Rendah" : "Aman"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

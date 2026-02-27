@@ -1,54 +1,52 @@
-import { UtensilsCrossed, Plus, Eye } from "lucide-react";
-import { useState } from "react";
-
-const menuData = [
-  {
-    id: 1,
-    waktu: "Makan Siang",
-    menu: "Nasi, Ayam Goreng, Sayur Bayam, Buah Pisang",
-    kalori: 520,
-    protein: 28,
-    lemak: 18,
-    karbo: 62,
-    status: "approved",
-    porsi: 1350,
-  },
-  {
-    id: 2,
-    waktu: "Snack Pagi",
-    menu: "Roti Gandum, Susu UHT",
-    kalori: 280,
-    protein: 12,
-    lemak: 8,
-    karbo: 35,
-    status: "approved",
-    porsi: 800,
-  },
-  {
-    id: 3,
-    waktu: "Makan Siang (Besok)",
-    menu: "Nasi, Ikan Panggang, Capcay, Buah Jeruk",
-    kalori: 490,
-    protein: 32,
-    lemak: 14,
-    karbo: 58,
-    status: "draft",
-    porsi: 1500,
-  },
-];
-
-const weeklyPlan = [
-  { hari: "Senin", menu: "Nasi + Ayam Goreng + Bayam + Pisang", kalori: 520 },
-  { hari: "Selasa", menu: "Nasi + Ikan Panggang + Capcay + Jeruk", kalori: 490 },
-  { hari: "Rabu", menu: "Nasi + Rendang + Sayur Asem + Semangka", kalori: 550 },
-  { hari: "Kamis", menu: "Nasi + Telur Balado + Tumis Kangkung + Pepaya", kalori: 460 },
-  { hari: "Jumat", menu: "Nasi + Ayam Suwir + Sup Sayur + Melon", kalori: 500 },
-];
+import { UtensilsCrossed, Plus } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
+import { format, addDays } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 
 export default function MenuPage() {
+  const today = format(new Date(), "yyyy-MM-dd");
+  const tomorrow = format(addDays(new Date(), 1), "yyyy-MM-dd");
+
+  const { data: dailyMenus, isLoading: loadingDaily } = useQuery({
+    queryKey: ["daily-menus", today, tomorrow],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("daily_menus")
+        .select("*, menu_items(*)")
+        .in("date", [today, tomorrow])
+        .order("date");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: allMenuItems, isLoading: loadingItems } = useQuery({
+    queryKey: ["menu-items"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("menu_items")
+        .select("*")
+        .order("category")
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Group daily menus by date
+  const todayMenus = dailyMenus?.filter((m) => m.date === today) ?? [];
+  const tomorrowMenus = dailyMenus?.filter((m) => m.date === tomorrow) ?? [];
+
+  const menuCards = [
+    ...todayMenus.map((m) => ({ ...m, label: "Hari Ini" })),
+    ...tomorrowMenus.map((m) => ({ ...m, label: "Besok" })),
+  ];
+
   return (
     <div className="space-y-6">
-      {/* Today menu cards */}
+      {/* Today & tomorrow menu cards */}
       <div>
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-foreground">Menu Hari Ini & Besok</h3>
@@ -57,73 +55,106 @@ export default function MenuPage() {
             Tambah Menu
           </button>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {menuData.map((item, i) => (
-            <div
-              key={item.id}
-              className="rounded-xl border border-border bg-card p-5 shadow-sm opacity-0 animate-fade-in"
-              style={{ animationDelay: `${i * 100}ms` }}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                    <UtensilsCrossed className="h-4 w-4 text-primary" />
-                  </div>
-                  <span className="text-xs font-medium text-muted-foreground">{item.waktu}</span>
-                </div>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                    item.status === "approved"
-                      ? "bg-success/10 text-success"
-                      : "bg-warning/10 text-warning"
-                  }`}
+
+        {loadingDaily ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-48 rounded-xl" />
+            ))}
+          </div>
+        ) : menuCards.length === 0 ? (
+          <div className="rounded-xl border border-border bg-card p-8 text-center">
+            <UtensilsCrossed className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+            <p className="text-sm text-muted-foreground">Belum ada menu untuk hari ini & besok</p>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {menuCards.map((item, i) => {
+              const mi = item.menu_items;
+              return (
+                <div
+                  key={item.id}
+                  className="rounded-xl border border-border bg-card p-5 shadow-sm opacity-0 animate-fade-in"
+                  style={{ animationDelay: `${i * 100}ms` }}
                 >
-                  {item.status === "approved" ? "Disetujui" : "Draft"}
-                </span>
-              </div>
-              <p className="text-sm font-medium text-foreground mb-3">{item.menu}</p>
-              <div className="grid grid-cols-4 gap-2 text-center">
-                {[
-                  { label: "Kalori", val: item.kalori },
-                  { label: "Protein", val: `${item.protein}g` },
-                  { label: "Lemak", val: `${item.lemak}g` },
-                  { label: "Karbo", val: `${item.karbo}g` },
-                ].map((n) => (
-                  <div key={n.label} className="rounded-md bg-secondary p-1.5">
-                    <p className="text-xs font-bold text-foreground">{n.val}</p>
-                    <p className="text-[10px] text-muted-foreground">{n.label}</p>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                        <UtensilsCrossed className="h-4 w-4 text-primary" />
+                      </div>
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {item.label} · {mi?.category}
+                      </span>
+                    </div>
                   </div>
-                ))}
-              </div>
-              <p className="mt-3 text-xs text-muted-foreground">Target: {item.porsi.toLocaleString("id")} porsi</p>
-            </div>
-          ))}
-        </div>
+                  <p className="text-sm font-medium text-foreground mb-1">{mi?.name}</p>
+                  {mi?.description && (
+                    <p className="text-xs text-muted-foreground mb-3">{mi.description}</p>
+                  )}
+                  <div className="grid grid-cols-4 gap-2 text-center">
+                    {[
+                      { label: "Kalori", val: mi?.calories ?? 0 },
+                      { label: "Protein", val: `${mi?.protein ?? 0}g` },
+                      { label: "Lemak", val: `${mi?.fat ?? 0}g` },
+                      { label: "Karbo", val: `${mi?.carbs ?? 0}g` },
+                    ].map((n) => (
+                      <div key={n.label} className="rounded-md bg-secondary p-1.5">
+                        <p className="text-xs font-bold text-foreground">{n.val}</p>
+                        <p className="text-[10px] text-muted-foreground">{n.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Target: {item.portion_count.toLocaleString("id")} porsi
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Weekly plan */}
+      {/* All menu items catalog */}
       <div className="rounded-xl border border-border bg-card p-5 shadow-sm opacity-0 animate-fade-in" style={{ animationDelay: "400ms" }}>
-        <h3 className="mb-4 text-sm font-semibold text-foreground">Rencana Menu Mingguan</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="pb-3 text-left text-xs font-semibold text-muted-foreground">Hari</th>
-                <th className="pb-3 text-left text-xs font-semibold text-muted-foreground">Menu</th>
-                <th className="pb-3 text-right text-xs font-semibold text-muted-foreground">Kalori</th>
-              </tr>
-            </thead>
-            <tbody>
-              {weeklyPlan.map((d) => (
-                <tr key={d.hari} className="border-b border-border/50 last:border-0">
-                  <td className="py-3 font-medium text-foreground">{d.hari}</td>
-                  <td className="py-3 text-muted-foreground">{d.menu}</td>
-                  <td className="py-3 text-right font-semibold text-foreground">{d.kalori} kkal</td>
+        <h3 className="mb-4 text-sm font-semibold text-foreground">Katalog Menu</h3>
+        {loadingItems ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 rounded" />)}
+          </div>
+        ) : !allMenuItems?.length ? (
+          <p className="text-sm text-muted-foreground text-center py-4">Belum ada item menu</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="pb-3 text-left text-xs font-semibold text-muted-foreground">Nama</th>
+                  <th className="pb-3 text-left text-xs font-semibold text-muted-foreground">Kategori</th>
+                  <th className="pb-3 text-right text-xs font-semibold text-muted-foreground">Kalori</th>
+                  <th className="pb-3 text-right text-xs font-semibold text-muted-foreground">Protein</th>
+                  <th className="pb-3 text-right text-xs font-semibold text-muted-foreground">Lemak</th>
+                  <th className="pb-3 text-right text-xs font-semibold text-muted-foreground">Karbo</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {allMenuItems.map((item) => (
+                  <tr key={item.id} className="border-b border-border/50 last:border-0">
+                    <td className="py-3 font-medium text-foreground">{item.name}</td>
+                    <td className="py-3">
+                      <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
+                        {item.category}
+                      </span>
+                    </td>
+                    <td className="py-3 text-right text-foreground">{item.calories} kkal</td>
+                    <td className="py-3 text-right text-muted-foreground">{item.protein}g</td>
+                    <td className="py-3 text-right text-muted-foreground">{item.fat}g</td>
+                    <td className="py-3 text-right text-muted-foreground">{item.carbs}g</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
