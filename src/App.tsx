@@ -37,6 +37,7 @@ function ProtectedRoutes() {
         <Route path="/inventory" element={<InventoryPage />} />
         <Route path="/distribution" element={<DistributionPage />} />
         <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/schools" element={<SchoolsPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>
