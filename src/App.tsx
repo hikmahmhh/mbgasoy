@@ -10,6 +10,7 @@ import MenuPage from "./pages/MenuPage";
 import InventoryPage from "./pages/InventoryPage";
 import DistributionPage from "./pages/DistributionPage";
 import ReportsPage from "./pages/ReportsPage";
+import SchoolsPage from "./pages/SchoolsPage";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 
@@ -36,6 +37,7 @@ function ProtectedRoutes() {
         <Route path="/inventory" element={<InventoryPage />} />
         <Route path="/distribution" element={<DistributionPage />} />
         <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/schools" element={<SchoolsPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>

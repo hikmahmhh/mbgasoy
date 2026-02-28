@@ -6,6 +6,7 @@ import {
   Truck,
   FileBarChart,
   ChefHat,
+  School,
   Menu,
   LogOut,
 } from "lucide-react";
@@ -19,6 +20,7 @@ const navItems = [
   { icon: Package, label: "Stok Bahan", path: "/inventory" },
   { icon: Truck, label: "Distribusi", path: "/distribution" },
   { icon: FileBarChart, label: "Laporan", path: "/reports" },
+  { icon: School, label: "Sekolah", path: "/schools" },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
