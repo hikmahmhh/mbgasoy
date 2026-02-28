@@ -6,6 +6,7 @@ import {
   Truck,
   FileBarChart,
   ChefHat,
+  School,
   Menu,
   LogOut,
 } from "lucide-react";
