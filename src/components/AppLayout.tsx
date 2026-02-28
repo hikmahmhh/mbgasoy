@@ -7,6 +7,7 @@ import {
   FileBarChart,
   ChefHat,
   School,
+  Settings,
   Menu,
   LogOut,
 } from "lucide-react";
