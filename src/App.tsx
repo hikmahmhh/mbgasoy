@@ -10,6 +10,7 @@ import MenuPage from "./pages/MenuPage";
 import InventoryPage from "./pages/InventoryPage";
 import DistributionPage from "./pages/DistributionPage";
 import ReportsPage from "./pages/ReportsPage";
+import SchoolsPage from "./pages/SchoolsPage";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 
