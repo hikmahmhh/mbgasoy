@@ -11,6 +11,7 @@ import InventoryPage from "./pages/InventoryPage";
 import DistributionPage from "./pages/DistributionPage";
 import ReportsPage from "./pages/ReportsPage";
 import SchoolsPage from "./pages/SchoolsPage";
+import SettingsPage from "./pages/SettingsPage";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 
@@ -38,6 +39,7 @@ function ProtectedRoutes() {
         <Route path="/distribution" element={<DistributionPage />} />
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/schools" element={<SchoolsPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>
