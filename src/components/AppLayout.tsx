@@ -22,6 +22,7 @@ const navItems = [
   { icon: Truck, label: "Distribusi", path: "/distribution" },
   { icon: FileBarChart, label: "Laporan", path: "/reports" },
   { icon: School, label: "Sekolah", path: "/schools" },
+  { icon: Settings, label: "Pengaturan", path: "/settings" },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
