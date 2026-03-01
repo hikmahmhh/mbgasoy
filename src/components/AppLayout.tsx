@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrg } from "@/hooks/useOrg";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
@@ -96,13 +97,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           )}
         </nav>
 
-        <div className="border-t border-sidebar-border px-4 py-4 space-y-3">
+        <div className="border-t border-sidebar-border px-4 py-4 space-y-2">
           <div className="rounded-lg bg-sidebar-accent/60 px-3 py-3">
             <p className="text-xs font-semibold text-sidebar-foreground truncate">{user?.email}</p>
             <p className="text-xs text-sidebar-foreground/50 capitalize">
               {isSuperAdmin ? "Super Admin" : orgRole || "member"}
             </p>
           </div>
+          <ThemeToggle />
           <button onClick={signOut}
             className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors">
             <LogOut className="h-4 w-4" /> Keluar

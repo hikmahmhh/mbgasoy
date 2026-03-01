@@ -1,4 +1,5 @@
 import StatCard from "@/components/StatCard";
+import ActivityLogPanel from "@/components/ActivityLogPanel";
 import { UtensilsCrossed, Package, Truck, Wallet, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useQuery } from "@tanstack/react-query";
@@ -239,6 +240,11 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Activity log */}
+      <div className="opacity-0 animate-fade-in" style={{ animationDelay: "700ms" }}>
+        <ActivityLogPanel />
+      </div>
     </div>
   );
 }

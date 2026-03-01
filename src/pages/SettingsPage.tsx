@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Users, Trash2, CreditCard } from "lucide-react";
+import { Settings, Users, Trash2, CreditCard, UserPlus, Mail } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrg } from "@/hooks/useOrg";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,7 @@ import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
 import { format, differenceInDays } from "date-fns";
+import { useActivityLog } from "@/hooks/useActivityLog";
 
 function ProfileTab() {
   const { user } = useAuth();
@@ -69,9 +70,14 @@ function ProfileTab() {
 }
 
 function OrgMembersTab() {
-  const { currentOrgId, isOrgAdmin } = useOrg();
+  const { currentOrgId, isOrgAdmin, currentOrg } = useOrg();
+  const { user } = useAuth();
   const qc = useQueryClient();
+  const { log } = useActivityLog();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("operator");
+  const [inviting, setInviting] = useState(false);
 
   const { data: members = [], isLoading } = useQuery({
     queryKey: ["org-members", currentOrgId],
@@ -92,15 +98,105 @@ function OrgMembersTab() {
       if (error) throw error;
       qc.invalidateQueries({ queryKey: ["org-members"] });
       toast({ title: `Role berhasil diubah ke ${newRole}` });
+      await log("update", "member", memberId, { role: newRole });
     } catch (e: any) {
       toast({ title: "Gagal mengubah role", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const handleInvite = async () => {
+    if (!inviteEmail.trim() || !currentOrgId) return;
+    setInviting(true);
+    try {
+      // Find user by email via profiles + auth - we look up if they exist
+      // Since we can't query auth.users from client, we check if they already are a member
+      const { data: existingMembers } = await supabase
+        .from("org_members")
+        .select("user_id")
+        .eq("org_id", currentOrgId);
+
+      // Try to find the user's profile by checking all profiles
+      // We need to use the admin API or a workaround
+      // For now, we use the Supabase auth admin invite (not available from client)
+      // Instead we'll add them by looking up their profile
+      const { data: targetProfile, error: profileError } = await supabase
+        .rpc("get_user_id_by_email" as any, { _email: inviteEmail.trim() });
+
+      if (profileError || !targetProfile) {
+        toast({
+          title: "User tidak ditemukan",
+          description: "Pastikan email sudah terdaftar di sistem.",
+          variant: "destructive",
+        });
+        setInviting(false);
+        return;
+      }
+
+      const targetUserId = targetProfile as string;
+
+      // Check if already a member
+      const alreadyMember = existingMembers?.some((m) => m.user_id === targetUserId);
+      if (alreadyMember) {
+        toast({ title: "Sudah menjadi anggota", description: "User ini sudah ada di organisasi.", variant: "destructive" });
+        setInviting(false);
+        return;
+      }
+
+      const { error } = await supabase.from("org_members").insert({
+        org_id: currentOrgId,
+        user_id: targetUserId,
+        role: inviteRole,
+      });
+      if (error) throw error;
+
+      qc.invalidateQueries({ queryKey: ["org-members"] });
+      toast({ title: "Anggota berhasil ditambahkan!" });
+      await log("invite", "member", undefined, { email: inviteEmail, role: inviteRole });
+      setInviteEmail("");
+    } catch (e: any) {
+      toast({ title: "Gagal menambahkan", description: e.message, variant: "destructive" });
+    } finally {
+      setInviting(false);
     }
   };
 
   if (isLoading) return <p className="text-muted-foreground text-center py-8">Memuat...</p>;
 
   return (
-    <>
+    <div className="space-y-4">
+      {/* Invite member section */}
+      {isOrgAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5" /> Undang Anggota</CardTitle>
+            <CardDescription>Tambahkan anggota baru ke organisasi dengan email yang sudah terdaftar</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1">
+                <Input
+                  type="email"
+                  placeholder="Email anggota baru"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                />
+              </div>
+              <Select value={inviteRole} onValueChange={setInviteRole}>
+                <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="operator">Operator</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button onClick={handleInvite} disabled={inviting || !inviteEmail.trim()}>
+                <Mail className="h-4 w-4 mr-1" />
+                {inviting ? "Menambahkan..." : "Tambah"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Anggota Organisasi</CardTitle>
@@ -161,10 +257,14 @@ function OrgMembersTab() {
         onConfirm={async () => {
           const { error } = await supabase.from("org_members").delete().eq("id", deleteTarget!.id);
           if (error) toast({ title: "Gagal", description: error.message, variant: "destructive" });
-          else { toast({ title: "Anggota dihapus" }); qc.invalidateQueries({ queryKey: ["org-members"] }); }
+          else {
+            toast({ title: "Anggota dihapus" });
+            qc.invalidateQueries({ queryKey: ["org-members"] });
+            await log("delete", "member", deleteTarget!.id, { name: deleteTarget!.name });
+          }
         }}
       />
-    </>
+    </div>
   );
 }
 
