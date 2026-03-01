@@ -240,6 +240,11 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Activity log */}
+      <div className="opacity-0 animate-fade-in" style={{ animationDelay: "700ms" }}>
+        <ActivityLogPanel />
+      </div>
     </div>
   );
 }
