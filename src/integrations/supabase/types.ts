@@ -291,6 +291,75 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_history: {
+        Row: {
+          amount: number
+          created_at: string
+          duitku_merchant_order_id: string | null
+          duitku_reference: string | null
+          expired_at: string | null
+          id: string
+          org_id: string
+          paid_at: string | null
+          payment_method: string | null
+          payment_url: string | null
+          qr_string: string | null
+          status: string
+          subscription_id: string
+          updated_at: string
+          va_number: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          duitku_merchant_order_id?: string | null
+          duitku_reference?: string | null
+          expired_at?: string | null
+          id?: string
+          org_id: string
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_url?: string | null
+          qr_string?: string | null
+          status?: string
+          subscription_id: string
+          updated_at?: string
+          va_number?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          duitku_merchant_order_id?: string | null
+          duitku_reference?: string | null
+          expired_at?: string | null
+          id?: string
+          org_id?: string
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_url?: string | null
+          qr_string?: string | null
+          status?: string
+          subscription_id?: string
+          updated_at?: string
+          va_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_history_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_history_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -373,6 +442,59 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          amount: number
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          org_id: string
+          payment_method: string | null
+          payment_reference: string | null
+          plan: string
+          status: string
+          trial_ends_at: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          org_id: string
+          payment_method?: string | null
+          payment_reference?: string | null
+          plan?: string
+          status?: string
+          trial_ends_at?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          org_id?: string
+          payment_method?: string | null
+          payment_reference?: string | null
+          plan?: string
+          status?: string
+          trial_ends_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -396,6 +518,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      deactivate_expired_trials: { Args: never; Returns: undefined }
       get_user_org_ids: { Args: { _user_id: string }; Returns: string[] }
       has_role: {
         Args: {
