@@ -100,7 +100,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <p className="text-xs font-semibold text-sidebar-foreground truncate">
               {user?.email}
             </p>
-            <p className="text-xs text-sidebar-foreground/50">Operator</p>
+            <p className="text-xs text-sidebar-foreground/50 capitalize">{userRole}</p>
           </div>
           <button
             onClick={signOut}

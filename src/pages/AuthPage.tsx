@@ -141,13 +141,16 @@ export default function AuthPage() {
             </button>
           </form>
 
-          <div className="mt-5 text-center">
-            <button
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-primary hover:underline"
-            >
-              {isLogin ? "Belum punya akun? Daftar" : "Sudah punya akun? Masuk"}
-            </button>
+          <div className="mt-5 text-center space-y-2">
+            {forgotMode ? (
+              <button onClick={() => setForgotMode(false)} className="text-sm text-primary hover:underline">
+                Kembali ke halaman login
+              </button>
+            ) : (
+              <button onClick={() => setIsLogin(!isLogin)} className="text-sm text-primary hover:underline">
+                {isLogin ? "Belum punya akun? Daftar" : "Sudah punya akun? Masuk"}
+              </button>
+            )}
           </div>
         </div>
       </div>
