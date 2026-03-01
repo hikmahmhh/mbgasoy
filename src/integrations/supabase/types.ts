@@ -560,6 +560,7 @@ export type Database = {
     }
     Functions: {
       deactivate_expired_trials: { Args: never; Returns: undefined }
+      get_user_id_by_email: { Args: { _email: string }; Returns: string }
       get_user_org_ids: { Args: { _user_id: string }; Returns: string[] }
       has_role: {
         Args: {
