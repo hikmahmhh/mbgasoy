@@ -1,4 +1,4 @@
-import { Download } from "lucide-react";
+import { Download, FileSpreadsheet } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 
 export default function ReportsPage() {
   const today = format(new Date(), "yyyy-MM-dd");
