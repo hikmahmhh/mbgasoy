@@ -21,18 +21,18 @@ const statusConfig: Record<string, { label: string; icon: typeof CheckCircle; cl
 
 export default function DistributionPage() {
   const qc = useQueryClient();
-  const today = format(new Date(), "yyyy-MM-dd");
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<DistRecord | null>(null);
   const [deleteItem, setDeleteItem] = useState<DistRecord | null>(null);
 
   const { data: distributions = [], isLoading } = useQuery({
-    queryKey: ["distributions", today],
+    queryKey: ["distributions", selectedDate],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("distribution_records")
         .select("*, schools(name, student_count)")
-        .eq("date", today)
+        .eq("date", selectedDate)
         .order("created_at");
       if (error) throw error;
       return data as DistRecord[];
