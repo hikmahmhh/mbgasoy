@@ -32,6 +32,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, signOut } = useAuth();
 
+  const { data: userRole = "operator" } = useQuery({
+    queryKey: ["user-role", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.role || "operator";
+    },
+    enabled: !!user,
+  });
+
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Mobile overlay */}
