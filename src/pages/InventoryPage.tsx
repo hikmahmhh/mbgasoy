@@ -89,7 +89,8 @@ export default function InventoryPage() {
               </button>
             ))}
           </div>
-          <Button size="sm" onClick={() => { setEditItem(null); setDialogOpen(true); }}>
+          <Button size="sm" onClick={() => { setEditItem(null); setDialogOpen(true); }} disabled={!canAdd("inventoryItems")}
+            title={!canAdd("inventoryItems") ? `Batas ${limits.maxInventoryItems} item tercapai` : ""}>
             <Plus className="h-3.5 w-3.5 mr-1" /> Tambah
           </Button>
         </div>
