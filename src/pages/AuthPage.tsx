@@ -63,7 +63,7 @@ export default function AuthPage() {
         {/* Form */}
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <h2 className="mb-6 text-lg font-semibold text-foreground">
-            {isLogin ? "Masuk ke Akun" : "Daftar Akun Baru"}
+            {forgotMode ? "Reset Password" : isLogin ? "Masuk ke Akun" : "Daftar Akun Baru"}
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
