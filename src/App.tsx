@@ -19,6 +19,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AuthPage from "./pages/AuthPage";
 import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
+import AcceptInvitePage from "./pages/AcceptInvitePage";
 import SubscriptionGuard from "@/components/SubscriptionGuard";
 
 const queryClient = new QueryClient();
