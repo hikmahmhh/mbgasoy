@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
+import { useOrg } from "@/hooks/useOrg";
 
 interface Props {
   open: boolean;
@@ -16,22 +17,17 @@ interface Props {
 
 export default function SchoolDialog({ open, onOpenChange, school }: Props) {
   const qc = useQueryClient();
+  const { currentOrgId } = useOrg();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
-    name: "",
-    address: "",
-    student_count: 0,
-    contact_person: "",
-    contact_phone: "",
+    name: "", address: "", student_count: 0, contact_person: "", contact_phone: "",
   });
 
   useEffect(() => {
     if (school) {
       setForm({
-        name: school.name,
-        address: school.address || "",
-        student_count: school.student_count,
-        contact_person: school.contact_person || "",
+        name: school.name, address: school.address || "",
+        student_count: school.student_count, contact_person: school.contact_person || "",
         contact_phone: school.contact_phone || "",
       });
     } else {
@@ -41,6 +37,7 @@ export default function SchoolDialog({ open, onOpenChange, school }: Props) {
 
   const handleSubmit = async () => {
     if (!form.name) return toast({ title: "Nama sekolah wajib diisi", variant: "destructive" });
+    if (!currentOrgId) return toast({ title: "Organisasi belum dipilih", variant: "destructive" });
     setLoading(true);
     try {
       const data = { ...form, student_count: Number(form.student_count) };
@@ -49,7 +46,7 @@ export default function SchoolDialog({ open, onOpenChange, school }: Props) {
         if (error) throw error;
         toast({ title: "Sekolah berhasil diperbarui" });
       } else {
-        const { error } = await supabase.from("schools").insert(data);
+        const { error } = await supabase.from("schools").insert({ ...data, org_id: currentOrgId });
         if (error) throw error;
         toast({ title: "Sekolah berhasil ditambahkan" });
       }

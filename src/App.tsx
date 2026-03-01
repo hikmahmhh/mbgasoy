@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { OrgProvider } from "@/hooks/useOrg";
 import AppLayout from "@/components/AppLayout";
 import Index from "./pages/Index";
 import MenuPage from "./pages/MenuPage";
@@ -12,6 +13,7 @@ import DistributionPage from "./pages/DistributionPage";
 import ReportsPage from "./pages/ReportsPage";
 import SchoolsPage from "./pages/SchoolsPage";
 import SettingsPage from "./pages/SettingsPage";
+import SuperAdminPage from "./pages/SuperAdminPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
@@ -32,18 +34,21 @@ function ProtectedRoutes() {
   if (!session) return <Navigate to="/auth" replace />;
 
   return (
-    <AppLayout>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/menu" element={<MenuPage />} />
-        <Route path="/inventory" element={<InventoryPage />} />
-        <Route path="/distribution" element={<DistributionPage />} />
-        <Route path="/reports" element={<ReportsPage />} />
-        <Route path="/schools" element={<SchoolsPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </AppLayout>
+    <OrgProvider>
+      <AppLayout>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/menu" element={<MenuPage />} />
+          <Route path="/inventory" element={<InventoryPage />} />
+          <Route path="/distribution" element={<DistributionPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/schools" element={<SchoolsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/super-admin" element={<SuperAdminPage />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </AppLayout>
+    </OrgProvider>
   );
 }
 
