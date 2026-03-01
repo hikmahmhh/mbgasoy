@@ -10,6 +10,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import MenuItemDialog from "@/components/MenuItemDialog";
 import DailyMenuDialog from "@/components/DailyMenuDialog";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 
 export default function MenuPage() {
   const qc = useQueryClient();
@@ -21,6 +22,7 @@ export default function MenuPage() {
   const [editItem, setEditItem] = useState<Tables<"menu_items"> | null>(null);
   const [deleteItem, setDeleteItem] = useState<Tables<"menu_items"> | null>(null);
   const [deleteDailyMenu, setDeleteDailyMenu] = useState<string | null>(null);
+  const { canAdd, limits } = usePlanLimits();
 
   const { data: dailyMenus, isLoading: loadingDaily } = useQuery({
     queryKey: ["daily-menus", today, tomorrow],
@@ -85,7 +87,8 @@ export default function MenuPage() {
             <Button size="sm" variant="outline" onClick={() => setDailyDialogOpen(true)}>
               <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Jadwalkan Menu
             </Button>
-            <Button size="sm" onClick={() => { setEditItem(null); setDialogOpen(true); }}>
+            <Button size="sm" onClick={() => { setEditItem(null); setDialogOpen(true); }} disabled={!canAdd("menuItems")}
+              title={!canAdd("menuItems") ? `Batas ${limits.maxMenuItems} menu tercapai` : ""}>
               <Plus className="h-3.5 w-3.5 mr-1" /> Tambah Menu
             </Button>
           </div>

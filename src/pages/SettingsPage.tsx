@@ -16,6 +16,7 @@ import { toast } from "@/hooks/use-toast";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
 import { format, differenceInDays } from "date-fns";
 import { useActivityLog } from "@/hooks/useActivityLog";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 
 function ProfileTab() {
   const { user } = useAuth();
@@ -78,6 +79,7 @@ function OrgMembersTab() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("operator");
   const [inviting, setInviting] = useState(false);
+  const { canAdd, limits } = usePlanLimits();
 
   const { data: members = [], isLoading } = useQuery({
     queryKey: ["org-members", currentOrgId],
@@ -202,7 +204,8 @@ function OrgMembersTab() {
                   <SelectItem value="operator">Operator</SelectItem>
                 </SelectContent>
               </Select>
-              <Button onClick={handleInvite} disabled={inviting || !inviteEmail.trim()}>
+              <Button onClick={handleInvite} disabled={inviting || !inviteEmail.trim() || !canAdd("members")}
+                title={!canAdd("members") ? `Batas ${limits.maxMembers} anggota tercapai` : ""}>
                 <Mail className="h-4 w-4 mr-1" />
                 {inviting ? "Mengundang..." : "Undang"}
               </Button>

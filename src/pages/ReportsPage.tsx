@@ -1,4 +1,4 @@
-import { Download } from "lucide-react";
+import { Download, FileSpreadsheet } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,10 +9,12 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 
 export default function ReportsPage() {
   const today = format(new Date(), "yyyy-MM-dd");
   const [exporting, setExporting] = useState(false);
+  const { limits } = usePlanLimits();
 
   // Today's distribution with school names
   const { data: todayDist = [] } = useQuery({
@@ -216,19 +218,60 @@ export default function ReportsPage() {
     }
   };
 
+  const handleExportCSV = () => {
+    try {
+      const rows = [
+        ["Laporan Harian MBG/SPPG", format(new Date(), "yyyy-MM-dd")],
+        [],
+        ["Metrik", "Nilai"],
+        ["Porsi Terdistribusi", totalPorsi],
+        ["Target Porsi Menu", menuPortions],
+        ["Sekolah Terlayani", `${schoolsServed}/${schools.length}`],
+        [],
+        ["Sekolah", "Porsi", "Status", "Pengantar", "Catatan"],
+        ...todayDist.map((d: any) => [d.schools?.name || "-", d.portion_count, d.status, d.delivered_by || "-", d.notes || "-"]),
+        [],
+        ["Bahan", "Kategori", "Stok", "Min Stok", "Status"],
+        ...inventoryItems.map((i: any) => [i.name, i.category, `${Number(i.current_stock)} ${i.unit}`, `${Number(i.min_stock)} ${i.unit}`, Number(i.current_stock) <= Number(i.min_stock) ? "Rendah" : "Aman"]),
+      ];
+      const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Laporan-MBG-${today}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "CSV berhasil diunduh" });
+    } catch (e: any) {
+      toast({ title: "Gagal export CSV", description: e.message, variant: "destructive" });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-border bg-card p-5 shadow-sm opacity-0 animate-fade-in">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-foreground">Ringkasan Hari Ini</h3>
-          <button
-            onClick={handleExportPDF}
-            disabled={exporting}
-            className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
-          >
-            <Download className="h-3.5 w-3.5" />
-            {exporting ? "Mengunduh..." : "Export PDF"}
-          </button>
+          <div className="flex gap-2">
+            {limits.exportCSV && (
+              <button
+                onClick={handleExportCSV}
+                className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-secondary transition-colors"
+              >
+                <FileSpreadsheet className="h-3.5 w-3.5" />
+                Export CSV
+              </button>
+            )}
+            <button
+              onClick={handleExportPDF}
+              disabled={exporting}
+              className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              <Download className="h-3.5 w-3.5" />
+              {exporting ? "Mengunduh..." : "Export PDF"}
+            </button>
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           {[

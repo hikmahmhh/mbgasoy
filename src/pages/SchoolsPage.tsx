@@ -9,6 +9,7 @@ import SchoolDialog from "@/components/SchoolDialog";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
 import { toast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 
 export default function SchoolsPage() {
   const qc = useQueryClient();
@@ -26,16 +27,30 @@ export default function SchoolsPage() {
   });
 
   const totalStudents = schools.reduce((s, sc) => s + sc.student_count, 0);
+  const { canAdd, remaining, limits } = usePlanLimits();
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2"><School className="h-6 w-6" /> Manajemen Sekolah</h1>
-          <p className="text-muted-foreground">{schools.length} sekolah · {totalStudents.toLocaleString("id-ID")} siswa</p>
+          <p className="text-muted-foreground">{schools.length} sekolah · {totalStudents.toLocaleString("id-ID")} siswa
+            {limits.maxSchools !== Infinity && <span className="ml-1 text-xs">(maks {limits.maxSchools})</span>}
+          </p>
         </div>
-        <Button onClick={() => { setEditSchool(null); setDialogOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Tambah Sekolah</Button>
+        <Button
+          onClick={() => { setEditSchool(null); setDialogOpen(true); }}
+          disabled={!canAdd("schools")}
+          title={!canAdd("schools") ? `Batas ${limits.maxSchools} sekolah tercapai. Upgrade paket untuk menambah.` : ""}
+        >
+          <Plus className="h-4 w-4 mr-1" /> Tambah Sekolah
+        </Button>
       </div>
+      {!canAdd("schools") && (
+        <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
+          Batas {limits.maxSchools} sekolah tercapai untuk paket {limits.label}. <a href="/settings" className="text-primary underline">Upgrade paket</a> untuk menambah lebih banyak.
+        </div>
+      )}
 
       <Card>
         <CardHeader><CardTitle>Daftar Sekolah</CardTitle></CardHeader>

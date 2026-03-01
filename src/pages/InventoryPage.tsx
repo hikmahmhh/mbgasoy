@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import InventoryItemDialog from "@/components/InventoryItemDialog";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 
 export default function InventoryPage() {
   const qc = useQueryClient();
@@ -16,6 +17,7 @@ export default function InventoryPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<Tables<"inventory_items"> | null>(null);
   const [deleteItem, setDeleteItem] = useState<Tables<"inventory_items"> | null>(null);
+  const { canAdd, limits } = usePlanLimits();
 
   const { data: inventory = [], isLoading } = useQuery({
     queryKey: ["inventory-items"],
@@ -87,7 +89,8 @@ export default function InventoryPage() {
               </button>
             ))}
           </div>
-          <Button size="sm" onClick={() => { setEditItem(null); setDialogOpen(true); }}>
+          <Button size="sm" onClick={() => { setEditItem(null); setDialogOpen(true); }} disabled={!canAdd("inventoryItems")}
+            title={!canAdd("inventoryItems") ? `Batas ${limits.maxInventoryItems} item tercapai` : ""}>
             <Plus className="h-3.5 w-3.5 mr-1" /> Tambah
           </Button>
         </div>
