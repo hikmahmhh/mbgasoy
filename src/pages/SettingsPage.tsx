@@ -407,6 +407,81 @@ function SubscriptionTab() {
         </CardContent>
       </Card>
 
+      {/* Plan Comparison */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Crown className="h-5 w-5 text-accent" /> Perbandingan Paket</CardTitle>
+          <CardDescription>Pilih paket yang sesuai dengan kebutuhan dapur Anda</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {Object.entries(PLAN_LIMITS).map(([key, plan]) => {
+              const isCurrent = (subscription?.plan || currentOrg?.plan || "starter") === key;
+              const features = [
+                { label: "Sekolah", value: plan.maxSchools === Infinity ? "Unlimited" : `${plan.maxSchools}` },
+                { label: "Anggota", value: plan.maxMembers === Infinity ? "Unlimited" : `${plan.maxMembers}` },
+                { label: "Menu", value: plan.maxMenuItems === Infinity ? "Unlimited" : `${plan.maxMenuItems}` },
+                { label: "Inventaris", value: plan.maxInventoryItems === Infinity ? "Unlimited" : `${plan.maxInventoryItems}` },
+                { label: "Export PDF", value: plan.exportPDF },
+                { label: "Export CSV", value: plan.exportCSV },
+              ];
+
+              return (
+                <div
+                  key={key}
+                  className={`relative rounded-xl border-2 p-5 transition-all ${
+                    isCurrent
+                      ? "border-primary bg-primary/5 shadow-md"
+                      : "border-border hover:border-primary/30"
+                  }`}
+                >
+                  {isCurrent && (
+                    <Badge className="absolute -top-2.5 left-4 bg-primary text-primary-foreground text-[10px]">
+                      Paket Saat Ini
+                    </Badge>
+                  )}
+                  {key === "pro" && !isCurrent && (
+                    <Badge className="absolute -top-2.5 left-4 bg-accent text-accent-foreground text-[10px]">
+                      Populer
+                    </Badge>
+                  )}
+                  <div className="mb-4">
+                    <h3 className="text-lg font-bold text-foreground">{plan.label}</h3>
+                    <p className="text-2xl font-extrabold text-foreground mt-1">
+                      {formatPrice(plan.price)}
+                      <span className="text-xs font-normal text-muted-foreground">/bulan</span>
+                    </p>
+                  </div>
+                  <ul className="space-y-2">
+                    {features.map((f) => (
+                      <li key={f.label} className="flex items-center gap-2 text-sm">
+                        {typeof f.value === "boolean" ? (
+                          f.value ? (
+                            <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                          ) : (
+                            <X className="h-4 w-4 text-muted-foreground/40 flex-shrink-0" />
+                          )
+                        ) : (
+                          <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                        )}
+                        <span className={typeof f.value === "boolean" && !f.value ? "text-muted-foreground/60" : "text-foreground"}>
+                          {f.label}: {typeof f.value === "boolean" ? (f.value ? "Ya" : "Tidak") : f.value}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  {!isCurrent && (
+                    <Button className="w-full mt-4" variant={key === "pro" ? "default" : "outline"} size="sm">
+                      Upgrade ke {plan.label}
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
       {payments.length > 0 && (
         <Card>
           <CardHeader>
