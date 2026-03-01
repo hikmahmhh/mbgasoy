@@ -257,11 +257,6 @@ function OrgFormDialog({ open, onOpenChange, org, onSaved }: {
 
   // Reset form when dialog opens
   const handleOpenChange = (o: boolean) => {
-    if (o && org) {
-      setForm({ name: org.name, slug: org.slug, address: org.address || "", phone: org.phone || "" });
-    } else if (o) {
-      setForm({ name: "", slug: "", address: "", phone: "" });
-    }
     onOpenChange(o);
   };
 
