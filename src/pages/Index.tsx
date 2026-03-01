@@ -10,6 +10,26 @@ import { Link } from "react-router-dom";
 
 export default function Dashboard() {
   const today = format(new Date(), "yyyy-MM-dd");
+  const { currentOrgId } = useOrg();
+
+  // Subscription / trial info
+  const { data: subscription } = useQuery({
+    queryKey: ["subscription", currentOrgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("org_id", currentOrgId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!currentOrgId,
+  });
+
+  const trialDaysLeft = subscription?.status === "trial" && subscription?.trial_ends_at
+    ? Math.max(0, differenceInDays(new Date(subscription.trial_ends_at), new Date()))
+    : null;
 
   // Today's distributions
   const { data: todayDist = [] } = useQuery({
