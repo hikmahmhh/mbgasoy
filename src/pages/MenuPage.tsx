@@ -22,6 +22,7 @@ export default function MenuPage() {
   const [editItem, setEditItem] = useState<Tables<"menu_items"> | null>(null);
   const [deleteItem, setDeleteItem] = useState<Tables<"menu_items"> | null>(null);
   const [deleteDailyMenu, setDeleteDailyMenu] = useState<string | null>(null);
+  const { canAdd, limits } = usePlanLimits();
 
   const { data: dailyMenus, isLoading: loadingDaily } = useQuery({
     queryKey: ["daily-menus", today, tomorrow],
