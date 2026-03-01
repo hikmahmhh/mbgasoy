@@ -53,10 +53,17 @@ function ProtectedRoutes() {
   );
 }
 
+function LandingRoute() {
+  const { session, loading } = useAuth();
+  if (loading) return null;
+  if (session) return <Navigate to="/dashboard" replace />;
+  return <LandingPage />;
+}
+
 function AuthRoute() {
   const { session, loading } = useAuth();
   if (loading) return null;
-  if (session) return <Navigate to="/" replace />;
+  if (session) return <Navigate to="/dashboard" replace />;
   return <AuthPage />;
 }
 
