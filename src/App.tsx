@@ -82,6 +82,7 @@ const App = () => (
               <Route path="/" element={<LandingRoute />} />
               <Route path="/auth" element={<AuthRoute />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/accept-invite" element={<AcceptInvitePage />} />
               <Route path="/*" element={<ProtectedRoutes />} />
             </Routes>
           </AuthProvider>

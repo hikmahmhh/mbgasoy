@@ -87,7 +87,8 @@ export default function MenuPage() {
             <Button size="sm" variant="outline" onClick={() => setDailyDialogOpen(true)}>
               <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Jadwalkan Menu
             </Button>
-            <Button size="sm" onClick={() => { setEditItem(null); setDialogOpen(true); }}>
+            <Button size="sm" onClick={() => { setEditItem(null); setDialogOpen(true); }} disabled={!canAdd("menuItems")}
+              title={!canAdd("menuItems") ? `Batas ${limits.maxMenuItems} menu tercapai` : ""}>
               <Plus className="h-3.5 w-3.5 mr-1" /> Tambah Menu
             </Button>
           </div>
