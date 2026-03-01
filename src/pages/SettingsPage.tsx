@@ -8,14 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Settings, Users, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrg } from "@/hooks/useOrg";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
-import type { Tables as DbTables } from "@/integrations/supabase/types";
 
-// --- Profile Tab ---
 function ProfileTab() {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -25,11 +24,7 @@ function ProfileTab() {
   const { data: profile, isLoading } = useQuery({
     queryKey: ["my-profile"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", user!.id)
-        .single();
+      const { data, error } = await supabase.from("profiles").select("*").eq("user_id", user!.id).single();
       if (error) throw error;
       return data;
     },
@@ -38,21 +33,14 @@ function ProfileTab() {
 
   useEffect(() => {
     if (profile) {
-      setForm({
-        full_name: profile.full_name || "",
-        phone: profile.phone || "",
-        kitchen_name: profile.kitchen_name || "",
-      });
+      setForm({ full_name: profile.full_name || "", phone: profile.phone || "", kitchen_name: profile.kitchen_name || "" });
     }
   }, [profile]);
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update(form)
-        .eq("user_id", user!.id);
+      const { error } = await supabase.from("profiles").update(form).eq("user_id", user!.id);
       if (error) throw error;
       qc.invalidateQueries({ queryKey: ["my-profile"] });
       toast({ title: "Profil berhasil disimpan" });
@@ -67,10 +55,7 @@ function ProfileTab() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Profil Dapur</CardTitle>
-        <CardDescription>Informasi profil Anda dan nama dapur</CardDescription>
-      </CardHeader>
+      <CardHeader><CardTitle>Profil Saya</CardTitle><CardDescription>Informasi profil Anda</CardDescription></CardHeader>
       <CardContent className="space-y-4 max-w-lg">
         <div><Label>Email</Label><Input value={user?.email || ""} disabled className="bg-muted" /></div>
         <div><Label>Nama Lengkap</Label><Input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} /></div>
@@ -82,177 +67,123 @@ function ProfileTab() {
   );
 }
 
-// --- User Management Tab (Admin only) ---
-function UserManagementTab() {
+function OrgMembersTab() {
+  const { currentOrgId, isOrgAdmin } = useOrg();
   const qc = useQueryClient();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
-  const { data: usersWithRoles = [], isLoading } = useQuery({
-    queryKey: ["admin-users"],
+  const { data: members = [], isLoading } = useQuery({
+    queryKey: ["org-members", currentOrgId],
     queryFn: async () => {
-      // Fetch all profiles + their roles
-      const { data: profiles, error: pErr } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, phone, kitchen_name, created_at");
-      if (pErr) throw pErr;
-
-      const { data: roles, error: rErr } = await supabase
-        .from("user_roles")
-        .select("user_id, role, id");
-      if (rErr) throw rErr;
-
-      return (profiles || []).map(p => ({
-        ...p,
-        role: roles?.find(r => r.user_id === p.user_id)?.role || "operator",
-        role_id: roles?.find(r => r.user_id === p.user_id)?.id || null,
-      }));
+      const { data, error } = await supabase
+        .from("org_members")
+        .select("id, user_id, role, created_at, profiles:user_id(full_name, phone, kitchen_name)")
+        .eq("org_id", currentOrgId!);
+      if (error) throw error;
+      return data;
     },
+    enabled: !!currentOrgId,
   });
 
-  const handleRoleChange = async (userId: string, roleId: string | null, newRole: string) => {
+  const handleRoleChange = async (memberId: string, newRole: string) => {
     try {
-      if (roleId) {
-        const { error } = await supabase
-          .from("user_roles")
-          .update({ role: newRole as any })
-          .eq("id", roleId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("user_roles")
-          .insert({ user_id: userId, role: newRole as any });
-        if (error) throw error;
-      }
-      qc.invalidateQueries({ queryKey: ["admin-users"] });
+      const { error } = await supabase.from("org_members").update({ role: newRole }).eq("id", memberId);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["org-members"] });
       toast({ title: `Role berhasil diubah ke ${newRole}` });
     } catch (e: any) {
       toast({ title: "Gagal mengubah role", description: e.message, variant: "destructive" });
     }
   };
 
-  if (isLoading) return <p className="text-muted-foreground text-center py-8">Memuat data pengguna...</p>;
+  if (isLoading) return <p className="text-muted-foreground text-center py-8">Memuat...</p>;
 
   return (
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Manajemen Pengguna</CardTitle>
-          <CardDescription>Kelola peran pengguna — hanya admin yang bisa mengakses halaman ini</CardDescription>
+          <CardTitle>Anggota Organisasi</CardTitle>
+          <CardDescription>Kelola anggota dan peran di organisasi ini</CardDescription>
         </CardHeader>
         <CardContent>
-          {usersWithRoles.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">Belum ada pengguna</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nama</TableHead>
-                  <TableHead>Dapur</TableHead>
-                  <TableHead>Telepon</TableHead>
-                  <TableHead>Bergabung</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {usersWithRoles.map(u => (
-                  <TableRow key={u.user_id}>
-                    <TableCell className="font-medium">{u.full_name || "-"}</TableCell>
-                    <TableCell>{u.kitchen_name || "-"}</TableCell>
-                    <TableCell>{u.phone || "-"}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {new Date(u.created_at).toLocaleDateString("id-ID")}
-                    </TableCell>
-                    <TableCell>
-                      <Select
-                        value={u.role}
-                        onValueChange={(val) => handleRoleChange(u.user_id, u.role_id, val)}
-                      >
-                        <SelectTrigger className="w-28 h-8 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nama</TableHead>
+                <TableHead>Telepon</TableHead>
+                <TableHead>Bergabung</TableHead>
+                <TableHead>Role</TableHead>
+                {isOrgAdmin && <TableHead className="text-right">Aksi</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {members.map((m: any) => (
+                <TableRow key={m.id}>
+                  <TableCell className="font-medium">{m.profiles?.full_name || "—"}</TableCell>
+                  <TableCell>{m.profiles?.phone || "—"}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {new Date(m.created_at).toLocaleDateString("id-ID")}
+                  </TableCell>
+                  <TableCell>
+                    {isOrgAdmin ? (
+                      <Select value={m.role} onValueChange={(v) => handleRoleChange(m.id, v)}>
+                        <SelectTrigger className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="admin">
-                            <Badge variant="default" className="text-[10px]">Admin</Badge>
-                          </SelectItem>
-                          <SelectItem value="operator">
-                            <Badge variant="secondary" className="text-[10px]">Operator</Badge>
-                          </SelectItem>
+                          <SelectItem value="admin"><Badge variant="default" className="text-[10px]">Admin</Badge></SelectItem>
+                          <SelectItem value="operator"><Badge variant="secondary" className="text-[10px]">Operator</Badge></SelectItem>
                         </SelectContent>
                       </Select>
-                    </TableCell>
+                    ) : (
+                      <Badge variant={m.role === "admin" ? "default" : "secondary"}>{m.role}</Badge>
+                    )}
+                  </TableCell>
+                  {isOrgAdmin && (
                     <TableCell className="text-right">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => setDeleteTarget({ id: u.role_id!, name: u.full_name || "Pengguna" })}
-                        disabled={!u.role_id}
-                      >
+                      <Button size="icon" variant="ghost"
+                        onClick={() => setDeleteTarget({ id: m.id, name: m.profiles?.full_name || "Anggota" })}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
       <DeleteConfirmDialog
         open={!!deleteTarget}
         onOpenChange={o => !o && setDeleteTarget(null)}
-        title="Hapus Role Pengguna"
-        description={`Yakin ingin menghapus role ${deleteTarget?.name}? Pengguna tidak akan bisa mengakses fitur.`}
+        title="Hapus Anggota"
+        description={`Yakin ingin menghapus ${deleteTarget?.name} dari organisasi?`}
         onConfirm={async () => {
-          const { error } = await supabase.from("user_roles").delete().eq("id", deleteTarget!.id);
-          if (error) toast({ title: "Gagal menghapus", description: error.message, variant: "destructive" });
-          else { toast({ title: "Role dihapus" }); qc.invalidateQueries({ queryKey: ["admin-users"] }); }
+          const { error } = await supabase.from("org_members").delete().eq("id", deleteTarget!.id);
+          if (error) toast({ title: "Gagal", description: error.message, variant: "destructive" });
+          else { toast({ title: "Anggota dihapus" }); qc.invalidateQueries({ queryKey: ["org-members"] }); }
         }}
       />
     </>
   );
 }
 
-// --- Main Settings Page ---
 export default function SettingsPage() {
-  const { user } = useAuth();
-
-  const { data: isAdmin = false } = useQuery({
-    queryKey: ["my-role", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user!.id)
-        .eq("role", "admin")
-        .maybeSingle();
-      if (error) throw error;
-      return !!data;
-    },
-    enabled: !!user,
-  });
+  const { isOrgAdmin } = useOrg();
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2"><Settings className="h-6 w-6" /> Pengaturan</h1>
-        <p className="text-muted-foreground">Kelola profil dapur dan pengguna</p>
+        <p className="text-muted-foreground">Kelola profil dan anggota organisasi</p>
       </div>
 
       <Tabs defaultValue="profile">
         <TabsList>
-          <TabsTrigger value="profile">Profil Dapur</TabsTrigger>
-          {isAdmin && <TabsTrigger value="users"><Users className="h-3.5 w-3.5 mr-1" /> Pengguna</TabsTrigger>}
+          <TabsTrigger value="profile">Profil</TabsTrigger>
+          <TabsTrigger value="members"><Users className="h-3.5 w-3.5 mr-1" /> Anggota</TabsTrigger>
         </TabsList>
-        <TabsContent value="profile" className="mt-4">
-          <ProfileTab />
-        </TabsContent>
-        {isAdmin && (
-          <TabsContent value="users" className="mt-4">
-            <UserManagementTab />
-          </TabsContent>
-        )}
+        <TabsContent value="profile" className="mt-4"><ProfileTab /></TabsContent>
+        <TabsContent value="members" className="mt-4"><OrgMembersTab /></TabsContent>
       </Tabs>
     </div>
   );
