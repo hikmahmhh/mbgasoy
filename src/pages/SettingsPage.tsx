@@ -92,6 +92,21 @@ function OrgMembersTab() {
     enabled: !!currentOrgId,
   });
 
+  const { data: pendingInvites = [] } = useQuery({
+    queryKey: ["org-invitations", currentOrgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("org_invitations" as any)
+        .select("*")
+        .eq("org_id", currentOrgId!)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!currentOrgId,
+  });
+
   const handleRoleChange = async (memberId: string, newRole: string) => {
     try {
       const { error } = await supabase.from("org_members").update({ role: newRole }).eq("id", memberId);
@@ -108,55 +123,53 @@ function OrgMembersTab() {
     if (!inviteEmail.trim() || !currentOrgId) return;
     setInviting(true);
     try {
-      // Find user by email via profiles + auth - we look up if they exist
-      // Since we can't query auth.users from client, we check if they already are a member
-      const { data: existingMembers } = await supabase
-        .from("org_members")
-        .select("user_id")
-        .eq("org_id", currentOrgId);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) throw new Error("Sesi tidak valid, silakan login ulang");
 
-      // Try to find the user's profile by checking all profiles
-      // We need to use the admin API or a workaround
-      // For now, we use the Supabase auth admin invite (not available from client)
-      // Instead we'll add them by looking up their profile
-      const { data: targetProfile, error: profileError } = await supabase
-        .rpc("get_user_id_by_email" as any, { _email: inviteEmail.trim() });
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-member`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            email: inviteEmail.trim(),
+            role: inviteRole,
+            org_id: currentOrgId,
+          }),
+        }
+      );
 
-      if (profileError || !targetProfile) {
-        toast({
-          title: "User tidak ditemukan",
-          description: "Pastikan email sudah terdaftar di sistem.",
-          variant: "destructive",
-        });
-        setInviting(false);
-        return;
-      }
-
-      const targetUserId = targetProfile as string;
-
-      // Check if already a member
-      const alreadyMember = existingMembers?.some((m) => m.user_id === targetUserId);
-      if (alreadyMember) {
-        toast({ title: "Sudah menjadi anggota", description: "User ini sudah ada di organisasi.", variant: "destructive" });
-        setInviting(false);
-        return;
-      }
-
-      const { error } = await supabase.from("org_members").insert({
-        org_id: currentOrgId,
-        user_id: targetUserId,
-        role: inviteRole,
-      });
-      if (error) throw error;
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Gagal mengundang");
 
       qc.invalidateQueries({ queryKey: ["org-members"] });
-      toast({ title: "Anggota berhasil ditambahkan!" });
-      await log("invite", "member", undefined, { email: inviteEmail, role: inviteRole });
+      qc.invalidateQueries({ queryKey: ["org-invitations"] });
+      toast({ title: "Berhasil!", description: result.message });
+      await log("invite", "member", undefined, { email: inviteEmail, role: inviteRole, type: result.type });
       setInviteEmail("");
     } catch (e: any) {
-      toast({ title: "Gagal menambahkan", description: e.message, variant: "destructive" });
+      toast({ title: "Gagal mengundang", description: e.message, variant: "destructive" });
     } finally {
       setInviting(false);
+    }
+  };
+
+  const handleCancelInvite = async (inviteId: string, email: string) => {
+    try {
+      const { error } = await supabase
+        .from("org_invitations" as any)
+        .update({ status: "cancelled" })
+        .eq("id", inviteId);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["org-invitations"] });
+      toast({ title: "Undangan dibatalkan", description: `Undangan untuk ${email} dibatalkan` });
+    } catch (e: any) {
+      toast({ title: "Gagal", description: e.message, variant: "destructive" });
     }
   };
 
@@ -169,7 +182,7 @@ function OrgMembersTab() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5" /> Undang Anggota</CardTitle>
-            <CardDescription>Tambahkan anggota baru ke organisasi dengan email yang sudah terdaftar</CardDescription>
+            <CardDescription>Undang anggota baru via email. User yang sudah terdaftar akan langsung ditambahkan, yang belum akan menerima email undangan.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-3">
@@ -179,6 +192,7 @@ function OrgMembersTab() {
                   placeholder="Email anggota baru"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleInvite()}
                 />
               </div>
               <Select value={inviteRole} onValueChange={setInviteRole}>
@@ -190,8 +204,37 @@ function OrgMembersTab() {
               </Select>
               <Button onClick={handleInvite} disabled={inviting || !inviteEmail.trim()}>
                 <Mail className="h-4 w-4 mr-1" />
-                {inviting ? "Menambahkan..." : "Tambah"}
+                {inviting ? "Mengundang..." : "Undang"}
               </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Pending invitations */}
+      {pendingInvites.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Undangan Pending</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {pendingInvites.map((inv: any) => (
+                <div key={inv.id} className="flex items-center justify-between rounded-md border border-border p-3">
+                  <div>
+                    <p className="text-sm font-medium">{inv.email}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Role: <Badge variant="secondary" className="text-[10px] ml-1">{inv.role}</Badge>
+                      <span className="ml-2">Kadaluarsa: {new Date(inv.expires_at).toLocaleDateString("id-ID")}</span>
+                    </p>
+                  </div>
+                  {isOrgAdmin && (
+                    <Button size="sm" variant="ghost" onClick={() => handleCancelInvite(inv.id, inv.email)}>
+                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                    </Button>
+                  )}
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -236,10 +279,12 @@ function OrgMembersTab() {
                   </TableCell>
                   {isOrgAdmin && (
                     <TableCell className="text-right">
-                      <Button size="icon" variant="ghost"
-                        onClick={() => setDeleteTarget({ id: m.id, name: m.profiles?.full_name || "Anggota" })}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      {m.user_id !== user?.id && (
+                        <Button size="icon" variant="ghost"
+                          onClick={() => setDeleteTarget({ id: m.id, name: m.profiles?.full_name || "Anggota" })}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
                     </TableCell>
                   )}
                 </TableRow>
