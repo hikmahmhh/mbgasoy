@@ -16,6 +16,7 @@ import SettingsPage from "./pages/SettingsPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AuthPage from "./pages/AuthPage";
+import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
