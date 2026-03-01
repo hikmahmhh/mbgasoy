@@ -14,6 +14,7 @@ import { usePlanLimits } from "@/hooks/usePlanLimits";
 export default function ReportsPage() {
   const today = format(new Date(), "yyyy-MM-dd");
   const [exporting, setExporting] = useState(false);
+  const { limits } = usePlanLimits();
 
   // Today's distribution with school names
   const { data: todayDist = [] } = useQuery({
