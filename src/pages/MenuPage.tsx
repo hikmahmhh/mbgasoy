@@ -17,8 +17,10 @@ export default function MenuPage() {
   const tomorrow = format(addDays(new Date(), 1), "yyyy-MM-dd");
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [dailyDialogOpen, setDailyDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<Tables<"menu_items"> | null>(null);
   const [deleteItem, setDeleteItem] = useState<Tables<"menu_items"> | null>(null);
+  const [deleteDailyMenu, setDeleteDailyMenu] = useState<string | null>(null);
 
   const { data: dailyMenus, isLoading: loadingDaily } = useQuery({
     queryKey: ["daily-menus", today, tomorrow],
