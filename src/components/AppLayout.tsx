@@ -10,7 +10,7 @@ import { useOrg } from "@/hooks/useOrg";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: UtensilsCrossed, label: "Menu Harian", path: "/menu" },
   { icon: Package, label: "Stok Bahan", path: "/inventory" },
   { icon: Truck, label: "Distribusi", path: "/distribution" },

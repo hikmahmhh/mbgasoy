@@ -152,8 +152,8 @@ export default function SuperAdminPage() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="free">Free</SelectItem>
-                              <SelectItem value="pro">Pro</SelectItem>
+                              <SelectItem value="starter">Starter</SelectItem>
+                              <SelectItem value="professional">Professional</SelectItem>
                               <SelectItem value="enterprise">Enterprise</SelectItem>
                             </SelectContent>
                           </Select>
