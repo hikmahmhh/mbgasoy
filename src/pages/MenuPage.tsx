@@ -63,6 +63,18 @@ export default function MenuPage() {
     qc.invalidateQueries({ queryKey: ["daily-menus"] });
   };
 
+  const handleDeleteDailyMenu = async () => {
+    if (!deleteDailyMenu) return;
+    const { error } = await supabase.from("daily_menus").delete().eq("id", deleteDailyMenu);
+    if (error) {
+      toast.error(error.message);
+      throw error;
+    }
+    toast.success("Menu harian berhasil dihapus");
+    qc.invalidateQueries({ queryKey: ["daily-menus"] });
+    qc.invalidateQueries({ queryKey: ["report-menus-today"] });
+  };
+
   return (
     <div className="space-y-6">
       {/* Today & tomorrow menu cards */}
