@@ -104,6 +104,43 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Trial banner */}
+      {trialDaysLeft !== null && (
+        <div className={`flex items-center gap-3 rounded-xl border p-4 animate-fade-in ${
+          trialDaysLeft <= 2 ? "border-destructive/30 bg-destructive/5" : "border-primary/30 bg-primary/5"
+        }`}>
+          <Clock className={`h-5 w-5 ${trialDaysLeft <= 2 ? "text-destructive" : "text-primary"}`} />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-foreground">
+              {trialDaysLeft === 0
+                ? "Trial Anda berakhir hari ini!"
+                : `Masa trial tersisa ${trialDaysLeft} hari`}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {trialDaysLeft <= 2
+                ? "Segera upgrade untuk tetap menggunakan layanan."
+                : "Nikmati semua fitur selama masa trial."}
+            </p>
+          </div>
+          <Link to="/settings" className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+            {trialDaysLeft <= 2 ? "Upgrade Sekarang" : "Lihat Paket"}
+          </Link>
+        </div>
+      )}
+
+      {subscription?.status === "expired" && (
+        <div className="flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 animate-fade-in">
+          <AlertTriangle className="h-5 w-5 text-destructive" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-foreground">Langganan Expired</p>
+            <p className="text-xs text-muted-foreground">Akses terbatas. Silakan upgrade untuk melanjutkan.</p>
+          </div>
+          <Link to="/settings" className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-destructive-foreground hover:bg-destructive/90 transition-colors">
+            Upgrade
+          </Link>
+        </div>
+      )}
+
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
