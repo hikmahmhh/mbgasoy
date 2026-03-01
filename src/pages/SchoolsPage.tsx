@@ -9,6 +9,7 @@ import SchoolDialog from "@/components/SchoolDialog";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
 import { toast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 
 export default function SchoolsPage() {
   const qc = useQueryClient();
