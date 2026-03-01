@@ -38,7 +38,7 @@ function ProtectedRoutes() {
     <OrgProvider>
       <AppLayout>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/dashboard" element={<Index />} />
           <Route path="/menu" element={<MenuPage />} />
           <Route path="/inventory" element={<InventoryPage />} />
           <Route path="/distribution" element={<DistributionPage />} />
