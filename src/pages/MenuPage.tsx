@@ -10,6 +10,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import MenuItemDialog from "@/components/MenuItemDialog";
 import DailyMenuDialog from "@/components/DailyMenuDialog";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 
 export default function MenuPage() {
   const qc = useQueryClient();
