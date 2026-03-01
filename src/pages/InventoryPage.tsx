@@ -17,6 +17,7 @@ export default function InventoryPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<Tables<"inventory_items"> | null>(null);
   const [deleteItem, setDeleteItem] = useState<Tables<"inventory_items"> | null>(null);
+  const { canAdd, limits } = usePlanLimits();
 
   const { data: inventory = [], isLoading } = useQuery({
     queryKey: ["inventory-items"],
