@@ -398,7 +398,7 @@ function Navbar() {
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-lg">
       <div className="container mx-auto max-w-6xl px-4 flex h-16 items-center justify-between">
-        <Link to="/landing" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary">
             <ChefHat className="h-5 w-5 text-primary-foreground" />
           </div>

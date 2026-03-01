@@ -32,13 +32,13 @@ function ProtectedRoutes() {
     );
   }
 
-  if (!session) return <Navigate to="/auth" replace />;
+  if (!session) return <Navigate to="/" replace />;
 
   return (
     <OrgProvider>
       <AppLayout>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/dashboard" element={<Index />} />
           <Route path="/menu" element={<MenuPage />} />
           <Route path="/inventory" element={<InventoryPage />} />
           <Route path="/distribution" element={<DistributionPage />} />
@@ -53,10 +53,17 @@ function ProtectedRoutes() {
   );
 }
 
+function LandingRoute() {
+  const { session, loading } = useAuth();
+  if (loading) return null;
+  if (session) return <Navigate to="/dashboard" replace />;
+  return <LandingPage />;
+}
+
 function AuthRoute() {
   const { session, loading } = useAuth();
   if (loading) return null;
-  if (session) return <Navigate to="/" replace />;
+  if (session) return <Navigate to="/dashboard" replace />;
   return <AuthPage />;
 }
 
@@ -68,7 +75,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/landing" element={<LandingPage />} />
+            <Route path="/" element={<LandingRoute />} />
             <Route path="/auth" element={<AuthRoute />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/*" element={<ProtectedRoutes />} />
