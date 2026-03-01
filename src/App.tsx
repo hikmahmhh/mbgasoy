@@ -12,6 +12,7 @@ import DistributionPage from "./pages/DistributionPage";
 import ReportsPage from "./pages/ReportsPage";
 import SchoolsPage from "./pages/SchoolsPage";
 import SettingsPage from "./pages/SettingsPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 
