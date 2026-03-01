@@ -137,7 +137,7 @@ export default function AuthPage() {
               disabled={loading}
               className="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              {loading ? "Memproses..." : isLogin ? "Masuk" : "Daftar"}
+              {loading ? "Memproses..." : forgotMode ? "Kirim Link Reset" : isLogin ? "Masuk" : "Daftar"}
             </button>
           </form>
 
