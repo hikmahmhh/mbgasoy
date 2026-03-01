@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Users, Trash2, CreditCard, UserPlus, Mail } from "lucide-react";
+import { Settings, Users, Trash2, CreditCard, UserPlus, Mail, Check, X, Crown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrg } from "@/hooks/useOrg";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,7 @@ import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
 import { format, differenceInDays } from "date-fns";
 import { useActivityLog } from "@/hooks/useActivityLog";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { PLAN_LIMITS, formatPrice, type PlanLimits } from "@/lib/planLimits";
 
 function ProfileTab() {
   const { user } = useAuth();
