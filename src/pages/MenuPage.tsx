@@ -81,9 +81,14 @@ export default function MenuPage() {
       <div>
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-foreground">Menu Hari Ini & Besok</h3>
-          <Button size="sm" onClick={() => { setEditItem(null); setDialogOpen(true); }}>
-            <Plus className="h-3.5 w-3.5 mr-1" /> Tambah Menu
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setDailyDialogOpen(true)}>
+              <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Jadwalkan Menu
+            </Button>
+            <Button size="sm" onClick={() => { setEditItem(null); setDialogOpen(true); }}>
+              <Plus className="h-3.5 w-3.5 mr-1" /> Tambah Menu
+            </Button>
+          </div>
         </div>
 
         {loadingDaily ? (
