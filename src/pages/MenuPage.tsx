@@ -193,12 +193,20 @@ export default function MenuPage() {
       </div>
 
       <MenuItemDialog open={dialogOpen} onOpenChange={setDialogOpen} item={editItem} />
+      <DailyMenuDialog open={dailyDialogOpen} onOpenChange={setDailyDialogOpen} />
       <DeleteConfirmDialog
         open={!!deleteItem}
         onOpenChange={(o) => !o && setDeleteItem(null)}
         title="Hapus Menu"
         description={`Apakah Anda yakin ingin menghapus "${deleteItem?.name}"? Tindakan ini tidak dapat dibatalkan.`}
         onConfirm={handleDelete}
+      />
+      <DeleteConfirmDialog
+        open={!!deleteDailyMenu}
+        onOpenChange={(o) => !o && setDeleteDailyMenu(null)}
+        title="Hapus Menu Harian"
+        description="Hapus jadwal menu harian ini? Tindakan ini tidak dapat dibatalkan."
+        onConfirm={handleDeleteDailyMenu}
       />
     </div>
   );

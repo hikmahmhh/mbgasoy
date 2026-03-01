@@ -76,23 +76,38 @@ export default function DistributionPage() {
         )}
       </div>
 
-      {/* Progress bar + add button */}
-      <div className="flex items-center justify-between">
-        {!isLoading && total > 0 && (
-          <div className="flex-1 mr-4 rounded-xl border border-border bg-card p-5 shadow-sm opacity-0 animate-fade-in" style={{ animationDelay: "300ms" }}>
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-semibold text-foreground">Progress Distribusi</p>
-              <p className="text-sm font-bold text-primary">{delivered}/{total}</p>
-            </div>
-            <div className="h-3 w-full rounded-full bg-secondary">
-              <div className="h-3 rounded-full bg-primary transition-all duration-500" style={{ width: `${(delivered / total) * 100}%` }} />
-            </div>
-          </div>
-        )}
+      {/* Date filter + progress bar + add button */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <Input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="w-44"
+          />
+          {selectedDate !== format(new Date(), "yyyy-MM-dd") && (
+            <Button variant="ghost" size="sm" onClick={() => setSelectedDate(format(new Date(), "yyyy-MM-dd"))}>
+              Hari Ini
+            </Button>
+          )}
+        </div>
         <Button size="sm" onClick={() => { setEditItem(null); setDialogOpen(true); }}>
           <Plus className="h-3.5 w-3.5 mr-1" /> Tambah Distribusi
         </Button>
       </div>
+
+      {/* Progress bar */}
+      {!isLoading && total > 0 && (
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm opacity-0 animate-fade-in" style={{ animationDelay: "300ms" }}>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-semibold text-foreground">Progress Distribusi</p>
+            <p className="text-sm font-bold text-primary">{delivered}/{total}</p>
+          </div>
+          <div className="h-3 w-full rounded-full bg-secondary">
+            <div className="h-3 rounded-full bg-primary transition-all duration-500" style={{ width: `${(delivered / total) * 100}%` }} />
+          </div>
+        </div>
+      )}
 
       {/* List */}
       {isLoading ? (
