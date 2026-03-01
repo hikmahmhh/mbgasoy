@@ -16,6 +16,7 @@ import { toast } from "@/hooks/use-toast";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
 import { format, differenceInDays } from "date-fns";
 import { useActivityLog } from "@/hooks/useActivityLog";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 
 function ProfileTab() {
   const { user } = useAuth();
