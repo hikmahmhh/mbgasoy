@@ -52,36 +52,54 @@ function HeroSection() {
 }
 
 // ─── Features ──────────────────────────────────────────
-const features = [
+const featureGroups = [
   {
-    icon: UtensilsCrossed,
-    title: "Manajemen Menu",
-    desc: "Atur menu harian lengkap dengan info kalori, protein, karbohidrat, dan lemak per porsi.",
+    label: "Operasional Dapur",
+    description: "Kelola seluruh aktivitas dapur dari satu tempat.",
+    items: [
+      {
+        icon: UtensilsCrossed,
+        title: "Manajemen Menu",
+        desc: "Atur menu harian lengkap dengan info kalori, protein, karbohidrat, dan lemak per porsi.",
+      },
+      {
+        icon: Package,
+        title: "Inventaris Bahan",
+        desc: "Pantau stok bahan secara real-time, notifikasi stok minimum, dan riwayat restok.",
+      },
+    ],
   },
   {
-    icon: Package,
-    title: "Inventaris Bahan",
-    desc: "Pantau stok bahan secara real-time, notifikasi stok minimum, dan riwayat restok.",
+    label: "Distribusi & Sekolah",
+    description: "Pantau pengiriman dan kelola data sekolah binaan.",
+    items: [
+      {
+        icon: Truck,
+        title: "Distribusi Makanan",
+        desc: "Catat pengiriman ke setiap sekolah, pantau status distribusi, dan laporan harian.",
+      },
+      {
+        icon: School,
+        title: "Data Sekolah",
+        desc: "Kelola data sekolah binaan, jumlah siswa, kontak PIC, dan alamat lengkap.",
+      },
+    ],
   },
   {
-    icon: Truck,
-    title: "Distribusi Makanan",
-    desc: "Catat pengiriman ke setiap sekolah, pantau status distribusi, dan laporan harian.",
-  },
-  {
-    icon: School,
-    title: "Data Sekolah",
-    desc: "Kelola data sekolah binaan, jumlah siswa, kontak PIC, dan alamat lengkap.",
-  },
-  {
-    icon: BarChart3,
-    title: "Laporan & Analitik",
-    desc: "Dashboard visual dengan grafik tren distribusi, ringkasan keuangan, dan laporan PDF.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Multi-Tenant & Aman",
-    desc: "Setiap organisasi terisolasi. Kelola tim dengan peran admin & operator secara aman.",
+    label: "Analitik & Keamanan",
+    description: "Insight berbasis data dengan keamanan tingkat enterprise.",
+    items: [
+      {
+        icon: BarChart3,
+        title: "Laporan & Analitik",
+        desc: "Dashboard visual dengan grafik tren distribusi, ringkasan keuangan, dan laporan PDF.",
+      },
+      {
+        icon: ShieldCheck,
+        title: "Multi-Tenant & Aman",
+        desc: "Setiap organisasi terisolasi. Kelola tim dengan peran admin & operator secara aman.",
+      },
+    ],
   },
 ];
 
@@ -96,19 +114,33 @@ function FeaturesSection() {
             Platform lengkap untuk operasional dapur program makanan bergizi gratis.
           </p>
         </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {features.map((f) => (
-            <Card key={f.title} className="group hover:shadow-lg hover:border-primary/30 transition-all duration-300">
-              <CardHeader className="pb-3">
-                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                  <f.icon className="h-6 w-6" />
+        <div className="space-y-12">
+          {featureGroups.map((group) => (
+            <div key={group.label}>
+              <div className="mb-5 flex items-center gap-3">
+                <div className="h-px flex-1 bg-border" />
+                <div className="text-center">
+                  <h3 className="text-base font-bold text-foreground">{group.label}</h3>
+                  <p className="text-xs text-muted-foreground">{group.description}</p>
                 </div>
-                <CardTitle className="text-lg">{f.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
-              </CardContent>
-            </Card>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+              <div className="grid gap-6 md:grid-cols-2">
+                {group.items.map((f) => (
+                  <Card key={f.title} className="group hover:shadow-lg hover:border-primary/30 transition-all duration-300">
+                    <CardHeader className="pb-3">
+                      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                        <f.icon className="h-6 w-6" />
+                      </div>
+                      <CardTitle className="text-lg">{f.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </div>
