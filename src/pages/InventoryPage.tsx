@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import InventoryItemDialog from "@/components/InventoryItemDialog";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 
 export default function InventoryPage() {
   const qc = useQueryClient();
