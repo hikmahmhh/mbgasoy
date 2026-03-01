@@ -10,6 +10,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
+import { useOrg } from "@/hooks/useOrg";
 
 type DistRecord = Tables<"distribution_records"> & { schools?: { name: string; student_count: number } | null };
 
@@ -27,15 +28,17 @@ const statuses = [
 
 export default function DistributionDialog({ open, onOpenChange, item }: Props) {
   const qc = useQueryClient();
+  const { currentOrgId } = useOrg();
   const [loading, setLoading] = useState(false);
 
   const { data: schools = [] } = useQuery({
-    queryKey: ["schools-list"],
+    queryKey: ["schools-list", currentOrgId],
     queryFn: async () => {
       const { data, error } = await supabase.from("schools").select("id, name").order("name");
       if (error) throw error;
       return data;
     },
+    enabled: !!currentOrgId,
   });
 
   const [form, setForm] = useState({
@@ -63,14 +66,9 @@ export default function DistributionDialog({ open, onOpenChange, item }: Props) 
   }, [item, open]);
 
   const handleSubmit = async () => {
-    if (!form.school_id) {
-      toast.error("Pilih sekolah terlebih dahulu");
-      return;
-    }
-    if (form.portion_count <= 0) {
-      toast.error("Jumlah porsi harus lebih dari 0");
-      return;
-    }
+    if (!form.school_id) { toast.error("Pilih sekolah terlebih dahulu"); return; }
+    if (form.portion_count <= 0) { toast.error("Jumlah porsi harus lebih dari 0"); return; }
+    if (!currentOrgId) { toast.error("Organisasi belum dipilih"); return; }
     setLoading(true);
     try {
       if (item) {
@@ -78,7 +76,7 @@ export default function DistributionDialog({ open, onOpenChange, item }: Props) 
         if (error) throw error;
         toast.success("Distribusi berhasil diperbarui");
       } else {
-        const { error } = await supabase.from("distribution_records").insert(form);
+        const { error } = await supabase.from("distribution_records").insert({ ...form, org_id: currentOrgId });
         if (error) throw error;
         toast.success("Distribusi berhasil ditambahkan");
       }

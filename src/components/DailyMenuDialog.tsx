@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useOrg } from "@/hooks/useOrg";
 
 interface Props {
   open: boolean;
@@ -16,6 +17,7 @@ interface Props {
 
 export default function DailyMenuDialog({ open, onOpenChange }: Props) {
   const qc = useQueryClient();
+  const { currentOrgId } = useOrg();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     menu_item_id: "",
@@ -24,12 +26,13 @@ export default function DailyMenuDialog({ open, onOpenChange }: Props) {
   });
 
   const { data: menuItems = [] } = useQuery({
-    queryKey: ["menu-items-list"],
+    queryKey: ["menu-items-list", currentOrgId],
     queryFn: async () => {
       const { data, error } = await supabase.from("menu_items").select("id, name, category").order("name");
       if (error) throw error;
       return data;
     },
+    enabled: !!currentOrgId,
   });
 
   useEffect(() => {
@@ -39,20 +42,16 @@ export default function DailyMenuDialog({ open, onOpenChange }: Props) {
   }, [open]);
 
   const handleSubmit = async () => {
-    if (!form.menu_item_id) {
-      toast.error("Pilih menu terlebih dahulu");
-      return;
-    }
-    if (form.portion_count <= 0) {
-      toast.error("Jumlah porsi harus lebih dari 0");
-      return;
-    }
+    if (!form.menu_item_id) { toast.error("Pilih menu terlebih dahulu"); return; }
+    if (form.portion_count <= 0) { toast.error("Jumlah porsi harus lebih dari 0"); return; }
+    if (!currentOrgId) { toast.error("Organisasi belum dipilih"); return; }
     setLoading(true);
     try {
       const { error } = await supabase.from("daily_menus").insert({
         menu_item_id: form.menu_item_id,
         date: form.date,
         portion_count: form.portion_count,
+        org_id: currentOrgId,
       });
       if (error) throw error;
       toast.success("Menu harian berhasil ditambahkan");
