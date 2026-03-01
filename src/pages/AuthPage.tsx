@@ -11,12 +11,21 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const [forgotMode, setForgotMode] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      if (isLogin) {
+      if (forgotMode) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        toast.success("Link reset password telah dikirim ke email Anda!");
+        setForgotMode(false);
+      } else if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success("Berhasil masuk!");
@@ -54,7 +63,7 @@ export default function AuthPage() {
         {/* Form */}
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <h2 className="mb-6 text-lg font-semibold text-foreground">
-            {isLogin ? "Masuk ke Akun" : "Daftar Akun Baru"}
+            {forgotMode ? "Reset Password" : isLogin ? "Masuk ke Akun" : "Daftar Akun Baru"}
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -90,45 +99,58 @@ export default function AuthPage() {
               </div>
             </div>
 
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-foreground">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Masukkan password"
-                  required
-                  minLength={6}
-                  className="w-full rounded-lg border border-input bg-background pl-10 pr-10 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {!forgotMode && (
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-foreground">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Masukkan password"
+                    required
+                    minLength={6}
+                    className="w-full rounded-lg border border-input bg-background pl-10 pr-10 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {isLogin && !forgotMode && (
+              <div className="text-right">
+                <button type="button" onClick={() => setForgotMode(true)} className="text-xs text-primary hover:underline">
+                  Lupa password?
                 </button>
               </div>
-            </div>
+            )}
 
             <button
               type="submit"
               disabled={loading}
               className="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              {loading ? "Memproses..." : isLogin ? "Masuk" : "Daftar"}
+              {loading ? "Memproses..." : forgotMode ? "Kirim Link Reset" : isLogin ? "Masuk" : "Daftar"}
             </button>
           </form>
 
-          <div className="mt-5 text-center">
-            <button
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-primary hover:underline"
-            >
-              {isLogin ? "Belum punya akun? Daftar" : "Sudah punya akun? Masuk"}
-            </button>
+          <div className="mt-5 text-center space-y-2">
+            {forgotMode ? (
+              <button onClick={() => setForgotMode(false)} className="text-sm text-primary hover:underline">
+                Kembali ke halaman login
+              </button>
+            ) : (
+              <button onClick={() => setIsLogin(!isLogin)} className="text-sm text-primary hover:underline">
+                {isLogin ? "Belum punya akun? Daftar" : "Sudah punya akun? Masuk"}
+              </button>
+            )}
           </div>
         </div>
       </div>

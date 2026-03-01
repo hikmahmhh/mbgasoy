@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
@@ -20,18 +21,18 @@ const statusConfig: Record<string, { label: string; icon: typeof CheckCircle; cl
 
 export default function DistributionPage() {
   const qc = useQueryClient();
-  const today = format(new Date(), "yyyy-MM-dd");
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<DistRecord | null>(null);
   const [deleteItem, setDeleteItem] = useState<DistRecord | null>(null);
 
   const { data: distributions = [], isLoading } = useQuery({
-    queryKey: ["distributions", today],
+    queryKey: ["distributions", selectedDate],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("distribution_records")
         .select("*, schools(name, student_count)")
-        .eq("date", today)
+        .eq("date", selectedDate)
         .order("created_at");
       if (error) throw error;
       return data as DistRecord[];
@@ -75,23 +76,38 @@ export default function DistributionPage() {
         )}
       </div>
 
-      {/* Progress bar + add button */}
-      <div className="flex items-center justify-between">
-        {!isLoading && total > 0 && (
-          <div className="flex-1 mr-4 rounded-xl border border-border bg-card p-5 shadow-sm opacity-0 animate-fade-in" style={{ animationDelay: "300ms" }}>
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-semibold text-foreground">Progress Distribusi</p>
-              <p className="text-sm font-bold text-primary">{delivered}/{total}</p>
-            </div>
-            <div className="h-3 w-full rounded-full bg-secondary">
-              <div className="h-3 rounded-full bg-primary transition-all duration-500" style={{ width: `${(delivered / total) * 100}%` }} />
-            </div>
-          </div>
-        )}
+      {/* Date filter + progress bar + add button */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <Input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="w-44"
+          />
+          {selectedDate !== format(new Date(), "yyyy-MM-dd") && (
+            <Button variant="ghost" size="sm" onClick={() => setSelectedDate(format(new Date(), "yyyy-MM-dd"))}>
+              Hari Ini
+            </Button>
+          )}
+        </div>
         <Button size="sm" onClick={() => { setEditItem(null); setDialogOpen(true); }}>
           <Plus className="h-3.5 w-3.5 mr-1" /> Tambah Distribusi
         </Button>
       </div>
+
+      {/* Progress bar */}
+      {!isLoading && total > 0 && (
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm opacity-0 animate-fade-in" style={{ animationDelay: "300ms" }}>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-semibold text-foreground">Progress Distribusi</p>
+            <p className="text-sm font-bold text-primary">{delivered}/{total}</p>
+          </div>
+          <div className="h-3 w-full rounded-full bg-secondary">
+            <div className="h-3 rounded-full bg-primary transition-all duration-500" style={{ width: `${(delivered / total) * 100}%` }} />
+          </div>
+        </div>
+      )}
 
       {/* List */}
       {isLoading ? (

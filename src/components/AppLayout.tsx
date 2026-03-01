@@ -14,6 +14,8 @@ import {
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
@@ -29,6 +31,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, signOut } = useAuth();
+
+  const { data: userRole = "operator" } = useQuery({
+    queryKey: ["user-role", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.role || "operator";
+    },
+    enabled: !!user,
+  });
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -84,7 +100,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <p className="text-xs font-semibold text-sidebar-foreground truncate">
               {user?.email}
             </p>
-            <p className="text-xs text-sidebar-foreground/50">Operator</p>
+            <p className="text-xs text-sidebar-foreground/50 capitalize">{userRole}</p>
           </div>
           <button
             onClick={signOut}

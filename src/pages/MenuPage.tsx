@@ -1,4 +1,4 @@
-import { UtensilsCrossed, Plus, Pencil, Trash2 } from "lucide-react";
+import { UtensilsCrossed, Plus, Pencil, Trash2, CalendarPlus } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,7 @@ import { format, addDays } from "date-fns";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import MenuItemDialog from "@/components/MenuItemDialog";
+import DailyMenuDialog from "@/components/DailyMenuDialog";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
 
 export default function MenuPage() {
@@ -16,8 +17,10 @@ export default function MenuPage() {
   const tomorrow = format(addDays(new Date(), 1), "yyyy-MM-dd");
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [dailyDialogOpen, setDailyDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<Tables<"menu_items"> | null>(null);
   const [deleteItem, setDeleteItem] = useState<Tables<"menu_items"> | null>(null);
+  const [deleteDailyMenu, setDeleteDailyMenu] = useState<string | null>(null);
 
   const { data: dailyMenus, isLoading: loadingDaily } = useQuery({
     queryKey: ["daily-menus", today, tomorrow],
@@ -60,15 +63,32 @@ export default function MenuPage() {
     qc.invalidateQueries({ queryKey: ["daily-menus"] });
   };
 
+  const handleDeleteDailyMenu = async () => {
+    if (!deleteDailyMenu) return;
+    const { error } = await supabase.from("daily_menus").delete().eq("id", deleteDailyMenu);
+    if (error) {
+      toast.error(error.message);
+      throw error;
+    }
+    toast.success("Menu harian berhasil dihapus");
+    qc.invalidateQueries({ queryKey: ["daily-menus"] });
+    qc.invalidateQueries({ queryKey: ["report-menus-today"] });
+  };
+
   return (
     <div className="space-y-6">
       {/* Today & tomorrow menu cards */}
       <div>
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-foreground">Menu Hari Ini & Besok</h3>
-          <Button size="sm" onClick={() => { setEditItem(null); setDialogOpen(true); }}>
-            <Plus className="h-3.5 w-3.5 mr-1" /> Tambah Menu
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setDailyDialogOpen(true)}>
+              <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Jadwalkan Menu
+            </Button>
+            <Button size="sm" onClick={() => { setEditItem(null); setDialogOpen(true); }}>
+              <Plus className="h-3.5 w-3.5 mr-1" /> Tambah Menu
+            </Button>
+          </div>
         </div>
 
         {loadingDaily ? (
@@ -109,7 +129,12 @@ export default function MenuPage() {
                       </div>
                     ))}
                   </div>
-                  <p className="mt-3 text-xs text-muted-foreground">Target: {item.portion_count.toLocaleString("id")} porsi</p>
+                  <p className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Target: {item.portion_count.toLocaleString("id")} porsi</span>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setDeleteDailyMenu(item.id)}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </p>
                 </div>
               );
             })}
@@ -168,12 +193,20 @@ export default function MenuPage() {
       </div>
 
       <MenuItemDialog open={dialogOpen} onOpenChange={setDialogOpen} item={editItem} />
+      <DailyMenuDialog open={dailyDialogOpen} onOpenChange={setDailyDialogOpen} />
       <DeleteConfirmDialog
         open={!!deleteItem}
         onOpenChange={(o) => !o && setDeleteItem(null)}
         title="Hapus Menu"
         description={`Apakah Anda yakin ingin menghapus "${deleteItem?.name}"? Tindakan ini tidak dapat dibatalkan.`}
         onConfirm={handleDelete}
+      />
+      <DeleteConfirmDialog
+        open={!!deleteDailyMenu}
+        onOpenChange={(o) => !o && setDeleteDailyMenu(null)}
+        title="Hapus Menu Harian"
+        description="Hapus jadwal menu harian ini? Tindakan ini tidak dapat dibatalkan."
+        onConfirm={handleDeleteDailyMenu}
       />
     </div>
   );
