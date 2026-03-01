@@ -245,13 +245,15 @@ function OrgFormDialog({ open, onOpenChange, org, onSaved }: {
 
   const isEdit = !!org;
 
-  useState(() => {
-    if (org) {
-      setForm({ name: org.name, slug: org.slug, address: org.address || "", phone: org.phone || "" });
-    } else {
-      setForm({ name: "", slug: "", address: "", phone: "" });
+  useEffect(() => {
+    if (open) {
+      if (org) {
+        setForm({ name: org.name, slug: org.slug, address: org.address || "", phone: org.phone || "" });
+      } else {
+        setForm({ name: "", slug: "", address: "", phone: "" });
+      }
     }
-  });
+  }, [open, org]);
 
   // Reset form when dialog opens
   const handleOpenChange = (o: boolean) => {
