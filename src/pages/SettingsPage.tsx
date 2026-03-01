@@ -204,7 +204,8 @@ function OrgMembersTab() {
                   <SelectItem value="operator">Operator</SelectItem>
                 </SelectContent>
               </Select>
-              <Button onClick={handleInvite} disabled={inviting || !inviteEmail.trim()}>
+              <Button onClick={handleInvite} disabled={inviting || !inviteEmail.trim() || !canAdd("members")}
+                title={!canAdd("members") ? `Batas ${limits.maxMembers} anggota tercapai` : ""}>
                 <Mail className="h-4 w-4 mr-1" />
                 {inviting ? "Mengundang..." : "Undang"}
               </Button>
