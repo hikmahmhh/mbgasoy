@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ThemeProvider } from "next-themes";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { OrgProvider } from "@/hooks/useOrg";
 import AppLayout from "@/components/AppLayout";
@@ -18,6 +19,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AuthPage from "./pages/AuthPage";
 import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
+import SubscriptionGuard from "@/components/SubscriptionGuard";
 
 const queryClient = new QueryClient();
 
@@ -38,12 +40,12 @@ function ProtectedRoutes() {
     <OrgProvider>
       <AppLayout>
         <Routes>
-          <Route path="/dashboard" element={<Index />} />
-          <Route path="/menu" element={<MenuPage />} />
-          <Route path="/inventory" element={<InventoryPage />} />
-          <Route path="/distribution" element={<DistributionPage />} />
-          <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/schools" element={<SchoolsPage />} />
+          <Route path="/dashboard" element={<SubscriptionGuard><Index /></SubscriptionGuard>} />
+          <Route path="/menu" element={<SubscriptionGuard><MenuPage /></SubscriptionGuard>} />
+          <Route path="/inventory" element={<SubscriptionGuard><InventoryPage /></SubscriptionGuard>} />
+          <Route path="/distribution" element={<SubscriptionGuard><DistributionPage /></SubscriptionGuard>} />
+          <Route path="/reports" element={<SubscriptionGuard><ReportsPage /></SubscriptionGuard>} />
+          <Route path="/schools" element={<SubscriptionGuard><SchoolsPage /></SubscriptionGuard>} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/super-admin" element={<SuperAdminPage />} />
           <Route path="*" element={<NotFound />} />
@@ -69,20 +71,22 @@ function AuthRoute() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/" element={<LandingRoute />} />
-            <Route path="/auth" element={<AuthRoute />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/*" element={<ProtectedRoutes />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              <Route path="/" element={<LandingRoute />} />
+              <Route path="/auth" element={<AuthRoute />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/*" element={<ProtectedRoutes />} />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
