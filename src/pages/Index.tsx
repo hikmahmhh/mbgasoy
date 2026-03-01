@@ -1,10 +1,12 @@
 import StatCard from "@/components/StatCard";
-import { UtensilsCrossed, Package, Truck, Wallet, AlertTriangle, CheckCircle } from "lucide-react";
+import { UtensilsCrossed, Package, Truck, Wallet, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format, subDays } from "date-fns";
+import { format, subDays, differenceInDays } from "date-fns";
+import { useOrg } from "@/hooks/useOrg";
+import { Link } from "react-router-dom";
 
 export default function Dashboard() {
   const today = format(new Date(), "yyyy-MM-dd");
