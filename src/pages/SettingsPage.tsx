@@ -79,6 +79,7 @@ function OrgMembersTab() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("operator");
   const [inviting, setInviting] = useState(false);
+  const { canAdd, limits } = usePlanLimits();
 
   const { data: members = [], isLoading } = useQuery({
     queryKey: ["org-members", currentOrgId],
