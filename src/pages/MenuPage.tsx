@@ -1,4 +1,4 @@
-import { UtensilsCrossed, Plus, Pencil, Trash2 } from "lucide-react";
+import { UtensilsCrossed, Plus, Pencil, Trash2, CalendarPlus } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,7 @@ import { format, addDays } from "date-fns";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import MenuItemDialog from "@/components/MenuItemDialog";
+import DailyMenuDialog from "@/components/DailyMenuDialog";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
 
 export default function MenuPage() {
