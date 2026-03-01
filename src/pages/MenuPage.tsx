@@ -129,7 +129,12 @@ export default function MenuPage() {
                       </div>
                     ))}
                   </div>
-                  <p className="mt-3 text-xs text-muted-foreground">Target: {item.portion_count.toLocaleString("id")} porsi</p>
+                  <p className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Target: {item.portion_count.toLocaleString("id")} porsi</span>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setDeleteDailyMenu(item.id)}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </p>
                 </div>
               );
             })}
