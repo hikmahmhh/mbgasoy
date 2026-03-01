@@ -1,13 +1,35 @@
 import StatCard from "@/components/StatCard";
-import { UtensilsCrossed, Package, Truck, Wallet, AlertTriangle, CheckCircle } from "lucide-react";
+import { UtensilsCrossed, Package, Truck, Wallet, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format, subDays } from "date-fns";
+import { format, subDays, differenceInDays } from "date-fns";
+import { useOrg } from "@/hooks/useOrg";
+import { Link } from "react-router-dom";
 
 export default function Dashboard() {
   const today = format(new Date(), "yyyy-MM-dd");
+  const { currentOrgId } = useOrg();
+
+  // Subscription / trial info
+  const { data: subscription } = useQuery({
+    queryKey: ["subscription", currentOrgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("org_id", currentOrgId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!currentOrgId,
+  });
+
+  const trialDaysLeft = subscription?.status === "trial" && subscription?.trial_ends_at
+    ? Math.max(0, differenceInDays(new Date(subscription.trial_ends_at), new Date()))
+    : null;
 
   // Today's distributions
   const { data: todayDist = [] } = useQuery({
@@ -82,6 +104,43 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Trial banner */}
+      {trialDaysLeft !== null && (
+        <div className={`flex items-center gap-3 rounded-xl border p-4 animate-fade-in ${
+          trialDaysLeft <= 2 ? "border-destructive/30 bg-destructive/5" : "border-primary/30 bg-primary/5"
+        }`}>
+          <Clock className={`h-5 w-5 ${trialDaysLeft <= 2 ? "text-destructive" : "text-primary"}`} />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-foreground">
+              {trialDaysLeft === 0
+                ? "Trial Anda berakhir hari ini!"
+                : `Masa trial tersisa ${trialDaysLeft} hari`}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {trialDaysLeft <= 2
+                ? "Segera upgrade untuk tetap menggunakan layanan."
+                : "Nikmati semua fitur selama masa trial."}
+            </p>
+          </div>
+          <Link to="/settings" className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+            {trialDaysLeft <= 2 ? "Upgrade Sekarang" : "Lihat Paket"}
+          </Link>
+        </div>
+      )}
+
+      {subscription?.status === "expired" && (
+        <div className="flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 animate-fade-in">
+          <AlertTriangle className="h-5 w-5 text-destructive" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-foreground">Langganan Expired</p>
+            <p className="text-xs text-muted-foreground">Akses terbatas. Silakan upgrade untuk melanjutkan.</p>
+          </div>
+          <Link to="/settings" className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-destructive-foreground hover:bg-destructive/90 transition-colors">
+            Upgrade
+          </Link>
+        </div>
+      )}
+
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Users, Trash2 } from "lucide-react";
+import { Settings, Users, Trash2, CreditCard } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrg } from "@/hooks/useOrg";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +14,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
+import { format, differenceInDays } from "date-fns";
 
 function ProfileTab() {
   const { user } = useAuth();
@@ -167,6 +168,133 @@ function OrgMembersTab() {
   );
 }
 
+function SubscriptionTab() {
+  const { currentOrgId, currentOrg } = useOrg();
+
+  const { data: subscription, isLoading } = useQuery({
+    queryKey: ["subscription-settings", currentOrgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("org_id", currentOrgId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!currentOrgId,
+  });
+
+  const { data: payments = [] } = useQuery({
+    queryKey: ["payment-history", currentOrgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("payment_history")
+        .select("*")
+        .eq("org_id", currentOrgId!)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!currentOrgId,
+  });
+
+  if (isLoading) return <p className="text-muted-foreground text-center py-8">Memuat...</p>;
+
+  const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" }> = {
+    trial: { label: "Trial", variant: "secondary" },
+    active: { label: "Aktif", variant: "default" },
+    expired: { label: "Expired", variant: "destructive" },
+    cancelled: { label: "Dibatalkan", variant: "destructive" },
+  };
+
+  const trialDaysLeft = subscription?.status === "trial" && subscription?.trial_ends_at
+    ? Math.max(0, differenceInDays(new Date(subscription.trial_ends_at), new Date()))
+    : null;
+
+  const statusInfo = statusMap[subscription?.status || "trial"] || statusMap.trial;
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Langganan</CardTitle>
+          <CardDescription>Status langganan organisasi {currentOrg?.name}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="rounded-lg border border-border p-4">
+              <p className="text-xs text-muted-foreground">Status</p>
+              <Badge variant={statusInfo.variant} className="mt-1">{statusInfo.label}</Badge>
+            </div>
+            <div className="rounded-lg border border-border p-4">
+              <p className="text-xs text-muted-foreground">Paket</p>
+              <p className="mt-1 text-sm font-semibold text-foreground capitalize">{subscription?.plan || "-"}</p>
+            </div>
+            <div className="rounded-lg border border-border p-4">
+              <p className="text-xs text-muted-foreground">
+                {subscription?.status === "trial" ? "Trial berakhir" : "Periode berakhir"}
+              </p>
+              <p className="mt-1 text-sm font-semibold text-foreground">
+                {subscription?.status === "trial" && subscription?.trial_ends_at
+                  ? `${format(new Date(subscription.trial_ends_at), "dd/MM/yyyy")} (${trialDaysLeft} hari lagi)`
+                  : subscription?.current_period_end
+                    ? format(new Date(subscription.current_period_end), "dd/MM/yyyy")
+                    : "-"}
+              </p>
+            </div>
+          </div>
+          {(subscription?.status === "trial" || subscription?.status === "expired") && (
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+              <p className="text-sm font-semibold text-foreground">
+                {subscription.status === "expired" ? "Langganan telah berakhir" : "Anda sedang dalam masa trial"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Hubungi admin untuk upgrade paket atau lakukan pembayaran melalui metode yang tersedia.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {payments.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Riwayat Pembayaran</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tanggal</TableHead>
+                  <TableHead>Jumlah</TableHead>
+                  <TableHead>Metode</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {payments.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell className="text-xs">{format(new Date(p.created_at), "dd/MM/yyyy")}</TableCell>
+                    <TableCell className="font-medium">Rp {Number(p.amount).toLocaleString("id-ID")}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{p.payment_method || "-"}</TableCell>
+                    <TableCell>
+                      <Badge variant={p.status === "paid" ? "default" : p.status === "pending" ? "secondary" : "destructive"}>
+                        {p.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const { isOrgAdmin } = useOrg();
 
@@ -174,16 +302,18 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2"><Settings className="h-6 w-6" /> Pengaturan</h1>
-        <p className="text-muted-foreground">Kelola profil dan anggota organisasi</p>
+        <p className="text-muted-foreground">Kelola profil, anggota, dan langganan</p>
       </div>
 
       <Tabs defaultValue="profile">
         <TabsList>
           <TabsTrigger value="profile">Profil</TabsTrigger>
           <TabsTrigger value="members"><Users className="h-3.5 w-3.5 mr-1" /> Anggota</TabsTrigger>
+          <TabsTrigger value="subscription"><CreditCard className="h-3.5 w-3.5 mr-1" /> Langganan</TabsTrigger>
         </TabsList>
         <TabsContent value="profile" className="mt-4"><ProfileTab /></TabsContent>
         <TabsContent value="members" className="mt-4"><OrgMembersTab /></TabsContent>
+        <TabsContent value="subscription" className="mt-4"><SubscriptionTab /></TabsContent>
       </Tabs>
     </div>
   );
