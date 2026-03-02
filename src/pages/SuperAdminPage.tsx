@@ -33,6 +33,8 @@ export default function SuperAdminPage() {
   const [userSearch, setUserSearch] = useState("");
   const [subSearch, setSubSearch] = useState("");
 
+  if (!isSuperAdmin) return <Navigate to="/" replace />;
+
   // ── All Organizations ──
   const { data: organizations = [], isLoading } = useQuery({
     queryKey: ["sa-organizations"],
