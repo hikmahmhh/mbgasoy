@@ -217,6 +217,55 @@ export type Database = {
           },
         ]
       }
+      menu_item_ingredients: {
+        Row: {
+          created_at: string
+          id: string
+          inventory_item_id: string
+          menu_item_id: string
+          org_id: string
+          quantity_per_portion: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inventory_item_id: string
+          menu_item_id: string
+          org_id: string
+          quantity_per_portion?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inventory_item_id?: string
+          menu_item_id?: string
+          org_id?: string
+          quantity_per_portion?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_item_ingredients_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_item_ingredients_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_item_ingredients_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_items: {
         Row: {
           calories: number | null
@@ -257,6 +306,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "menu_items_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          metadata: Json | null
+          org_id: string
+          title: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          metadata?: Json | null
+          org_id: string
+          title: string
+          type?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          metadata?: Json | null
+          org_id?: string
+          title?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -455,6 +548,7 @@ export type Database = {
           full_name: string
           id: string
           kitchen_name: string | null
+          onboarding_completed: boolean
           phone: string | null
           updated_at: string
           user_id: string
@@ -465,6 +559,7 @@ export type Database = {
           full_name?: string
           id?: string
           kitchen_name?: string | null
+          onboarding_completed?: boolean
           phone?: string | null
           updated_at?: string
           user_id: string
@@ -475,6 +570,7 @@ export type Database = {
           full_name?: string
           id?: string
           kitchen_name?: string | null
+          onboarding_completed?: boolean
           phone?: string | null
           updated_at?: string
           user_id?: string
@@ -583,6 +679,41 @@ export type Database = {
           },
         ]
       }
+      user_dashboard_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          org_id: string
+          updated_at: string
+          user_id: string
+          widget_config: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          org_id: string
+          updated_at?: string
+          user_id: string
+          widget_config?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          org_id?: string
+          updated_at?: string
+          user_id?: string
+          widget_config?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_dashboard_preferences_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -608,6 +739,10 @@ export type Database = {
     Functions: {
       accept_invitation: { Args: { _token: string }; Returns: Json }
       deactivate_expired_trials: { Args: never; Returns: undefined }
+      deduct_stock_for_menu: {
+        Args: { _daily_menu_id: string; _org_id: string }
+        Returns: Json
+      }
       get_user_id_by_email: { Args: { _email: string }; Returns: string }
       get_user_org_ids: { Args: { _user_id: string }; Returns: string[] }
       has_role: {
