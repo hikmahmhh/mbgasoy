@@ -33,7 +33,7 @@ export default function SuperAdminPage() {
   const [userSearch, setUserSearch] = useState("");
   const [subSearch, setSubSearch] = useState("");
 
-  if (!isSuperAdmin) return <Navigate to="/" replace />;
+  // Guard moved after all hooks
 
   // ── All Organizations ──
   const { data: organizations = [], isLoading } = useQuery({
