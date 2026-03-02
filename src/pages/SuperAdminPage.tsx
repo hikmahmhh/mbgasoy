@@ -109,6 +109,8 @@ export default function SuperAdminPage() {
     },
   });
 
+  if (!isSuperAdmin) return <Navigate to="/" replace />;
+
   // ── Stats ──
   const totalOrgs = organizations.length;
   const activeOrgs = organizations.filter(o => o.status === "active").length;
