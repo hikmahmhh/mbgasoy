@@ -252,7 +252,7 @@ export default function SuperAdminPage() {
                         <TableHead>Nama</TableHead>
                         <TableHead>Slug</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Plan</TableHead>
+                        <TableHead>Dibuat</TableHead>
                         <TableHead>Dibuat</TableHead>
                         <TableHead className="text-right">Aksi</TableHead>
                       </TableRow>
