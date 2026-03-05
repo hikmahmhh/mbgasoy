@@ -60,7 +60,7 @@ function ProtectedRoutes() {
 function LandingRoute() {
   const { session, loading } = useAuth();
   if (loading) return null;
-  if (session) return <Navigate to="/dashboard" replace />;
+  if (session) return <Navigate to="/home" replace />;
   return <LandingPage />;
 }
 
