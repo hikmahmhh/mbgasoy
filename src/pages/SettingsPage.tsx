@@ -334,21 +334,6 @@ function SubscriptionTab() {
     enabled: !!currentOrgId,
   });
 
-  const { data: payments = [] } = useQuery({
-    queryKey: ["payment-history", currentOrgId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("payment_history")
-        .select("*")
-        .eq("org_id", currentOrgId!)
-        .order("created_at", { ascending: false })
-        .limit(10);
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!currentOrgId,
-  });
-
   if (isLoading) return <p className="text-muted-foreground text-center py-8">Memuat...</p>;
 
   const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" }> = {
@@ -378,13 +363,7 @@ function SubscriptionTab() {
               <Badge variant={statusInfo.variant} className="mt-1">{statusInfo.label}</Badge>
             </div>
             <div className="rounded-lg border border-border p-4">
-              <p className="text-xs text-muted-foreground">Paket</p>
-              <p className="mt-1 text-sm font-semibold text-foreground capitalize">{subscription?.plan || "-"}</p>
-            </div>
-            <div className="rounded-lg border border-border p-4">
-              <p className="text-xs text-muted-foreground">
-                {subscription?.status === "trial" ? "Trial berakhir" : "Periode berakhir"}
-              </p>
+              <p className="text-xs text-muted-foreground">Masa Aktif Hingga</p>
               <p className="mt-1 text-sm font-semibold text-foreground">
                 {subscription?.status === "trial" && subscription?.trial_ends_at
                   ? `${format(new Date(subscription.trial_ends_at), "dd/MM/yyyy")} (${trialDaysLeft} hari lagi)`
@@ -393,128 +372,33 @@ function SubscriptionTab() {
                     : "-"}
               </p>
             </div>
-          </div>
-          {(subscription?.status === "trial" || subscription?.status === "expired") && (
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
-              <p className="text-sm font-semibold text-foreground">
-                {subscription.status === "expired" ? "Langganan telah berakhir" : "Anda sedang dalam masa trial"}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Hubungi admin untuk upgrade paket atau lakukan pembayaran melalui metode yang tersedia.
+            <div className="rounded-lg border border-border p-4">
+              <p className="text-xs text-muted-foreground">Dibuat</p>
+              <p className="mt-1 text-sm font-semibold text-foreground">
+                {subscription?.created_at ? format(new Date(subscription.created_at), "dd/MM/yyyy") : "-"}
               </p>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
 
-      {/* Plan Comparison */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Crown className="h-5 w-5 text-accent" /> Perbandingan Paket</CardTitle>
-          <CardDescription>Pilih paket yang sesuai dengan kebutuhan dapur Anda</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {Object.entries(PLAN_LIMITS).map(([key, plan]) => {
-              const isCurrent = (subscription?.plan || currentOrg?.plan || "starter") === key;
-              const features = [
-                { label: "Sekolah", value: plan.maxSchools === Infinity ? "Unlimited" : `${plan.maxSchools}` },
-                { label: "Anggota", value: plan.maxMembers === Infinity ? "Unlimited" : `${plan.maxMembers}` },
-                { label: "Menu", value: plan.maxMenuItems === Infinity ? "Unlimited" : `${plan.maxMenuItems}` },
-                { label: "Inventaris", value: plan.maxInventoryItems === Infinity ? "Unlimited" : `${plan.maxInventoryItems}` },
-                { label: "Export PDF", value: plan.exportPDF },
-                { label: "Export CSV", value: plan.exportCSV },
-              ];
-
-              return (
-                <div
-                  key={key}
-                  className={`relative rounded-xl border-2 p-5 transition-all ${
-                    isCurrent
-                      ? "border-primary bg-primary/5 shadow-md"
-                      : "border-border hover:border-primary/30"
-                  }`}
-                >
-                  {isCurrent && (
-                    <Badge className="absolute -top-2.5 left-4 bg-primary text-primary-foreground text-[10px]">
-                      Paket Saat Ini
-                    </Badge>
-                  )}
-                  {key === "pro" && !isCurrent && (
-                    <Badge className="absolute -top-2.5 left-4 bg-accent text-accent-foreground text-[10px]">
-                      Populer
-                    </Badge>
-                  )}
-                  <div className="mb-4">
-                    <h3 className="text-lg font-bold text-foreground">{plan.label}</h3>
-                    <p className="text-2xl font-extrabold text-foreground mt-1">
-                      {formatPrice(plan.price)}
-                      <span className="text-xs font-normal text-muted-foreground">/bulan</span>
-                    </p>
-                  </div>
-                  <ul className="space-y-2">
-                    {features.map((f) => (
-                      <li key={f.label} className="flex items-center gap-2 text-sm">
-                        {typeof f.value === "boolean" ? (
-                          f.value ? (
-                            <Check className="h-4 w-4 text-primary flex-shrink-0" />
-                          ) : (
-                            <X className="h-4 w-4 text-muted-foreground/40 flex-shrink-0" />
-                          )
-                        ) : (
-                          <Check className="h-4 w-4 text-primary flex-shrink-0" />
-                        )}
-                        <span className={typeof f.value === "boolean" && !f.value ? "text-muted-foreground/60" : "text-foreground"}>
-                          {f.label}: {typeof f.value === "boolean" ? (f.value ? "Ya" : "Tidak") : f.value}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  {!isCurrent && (
-                    <Button className="w-full mt-4" variant={key === "pro" ? "default" : "outline"} size="sm">
-                      Upgrade ke {plan.label}
-                    </Button>
-                  )}
-                </div>
-              );
-            })}
+          {/* WA Payment CTA */}
+          <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-5">
+            <h3 className="text-sm font-bold text-foreground mb-2">Pembayaran & Perpanjangan</h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              Untuk melakukan pembayaran atau perpanjangan langganan, silakan hubungi tim Pytagotech melalui WhatsApp. 
+              Setelah pembayaran dikonfirmasi, masa aktif akan diperbarui oleh admin.
+            </p>
+            <a
+              href={WA_PAYMENT_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors"
+            >
+              <Users className="h-4 w-4" />
+              Hubungi via WhatsApp ({WA_PAYMENT_NUMBER})
+            </a>
           </div>
         </CardContent>
       </Card>
-
-      {payments.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Riwayat Pembayaran</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tanggal</TableHead>
-                  <TableHead>Jumlah</TableHead>
-                  <TableHead>Metode</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {payments.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell className="text-xs">{format(new Date(p.created_at), "dd/MM/yyyy")}</TableCell>
-                    <TableCell className="font-medium">Rp {Number(p.amount).toLocaleString("id-ID")}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{p.payment_method || "-"}</TableCell>
-                    <TableCell>
-                      <Badge variant={p.status === "paid" ? "default" : p.status === "pending" ? "secondary" : "destructive"}>
-                        {p.status}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
