@@ -85,6 +85,23 @@ export default function AuthPage() {
               </div>
             )}
 
+            {!isLogin && (
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-foreground">No. Telepon / WhatsApp</label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="08xxxxxxxxxx"
+                    required={!isLogin}
+                    className="w-full rounded-lg border border-input bg-background pl-10 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+              </div>
+            )
+
             <div>
               <label className="mb-1.5 block text-xs font-medium text-foreground">Email</label>
               <div className="relative">
