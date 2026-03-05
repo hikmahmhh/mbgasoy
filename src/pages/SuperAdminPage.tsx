@@ -220,7 +220,6 @@ export default function SuperAdminPage() {
           <TabsTrigger value="users"><UserCog className="h-3.5 w-3.5 mr-1" /> User Global</TabsTrigger>
           <TabsTrigger value="subs"><CreditCard className="h-3.5 w-3.5 mr-1" /> Langganan</TabsTrigger>
           {viewOrgId && <TabsTrigger value="members"><Users className="h-3.5 w-3.5 mr-1" /> Anggota Org</TabsTrigger>}
-          {viewOrgId && <TabsTrigger value="members"><Users className="h-3.5 w-3.5 mr-1" /> Anggota Org</TabsTrigger>}
         </TabsList>
 
         {/* ── TAB: Organisasi ── */}
