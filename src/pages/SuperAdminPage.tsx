@@ -437,47 +437,6 @@ export default function SuperAdminPage() {
           </Card>
         </TabsContent>
 
-        {/* ── TAB: Riwayat Pembayaran ── */}
-        <TabsContent value="payments" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Riwayat Pembayaran</CardTitle>
-              <CardDescription>100 transaksi terakhir di seluruh platform</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Organisasi</TableHead>
-                      <TableHead>Jumlah</TableHead>
-                      <TableHead>Metode</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Tanggal</TableHead>
-                      <TableHead>Dibayar</TableHead>
-                      <TableHead>Referensi</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {payments.length === 0 ? (
-                      <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Belum ada riwayat pembayaran</TableCell></TableRow>
-                    ) : payments.map((p: any) => (
-                      <TableRow key={p.id}>
-                        <TableCell className="font-medium">{p.organizations?.name || "—"}</TableCell>
-                        <TableCell className="font-medium">{formatCurrency(p.amount)}</TableCell>
-                        <TableCell className="text-xs">{p.payment_method || "—"}</TableCell>
-                        <TableCell>{statusBadge(p.status)}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{formatDate(p.created_at)}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{formatDate(p.paid_at)}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground truncate max-w-[120px]">{p.duitku_reference || "—"}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* ── TAB: Anggota Org ── */}
         {viewOrgId && (
