@@ -153,6 +153,16 @@ export default function SuperAdminPage() {
     qc.invalidateQueries({ queryKey: ["sa-subscriptions"] });
   };
 
+  const handleUpdateSubExpiry = async (subId: string, date: string) => {
+    const { error } = await supabase.from("subscriptions").update({
+      current_period_end: date,
+      updated_at: new Date().toISOString(),
+    }).eq("id", subId);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Masa aktif diperbarui");
+    qc.invalidateQueries({ queryKey: ["sa-subscriptions"] });
+  };
+
   const handleRemoveMember = async (memberId: string) => {
     const { error } = await supabase.from("org_members").delete().eq("id", memberId);
     if (error) { toast.error(error.message); return; }
