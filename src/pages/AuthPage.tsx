@@ -100,7 +100,7 @@ export default function AuthPage() {
                   />
                 </div>
               </div>
-            )
+            )}
 
             <div>
               <label className="mb-1.5 block text-xs font-medium text-foreground">Email</label>
