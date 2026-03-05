@@ -95,19 +95,7 @@ export default function SuperAdminPage() {
     },
   });
 
-  // ── All Payment History ──
-  const { data: payments = [] } = useQuery({
-    queryKey: ["sa-payments"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("payment_history")
-        .select("*, organizations(name)")
-        .order("created_at", { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      return data as any[];
-    },
-  });
+  // Payment history removed - payments handled via WhatsApp
 
   if (!isSuperAdmin) return <Navigate to="/" replace />;
 
