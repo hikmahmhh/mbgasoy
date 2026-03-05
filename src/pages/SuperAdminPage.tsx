@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Shield, Building2, Users, Plus, Pencil, Ban, CheckCircle, Eye,
-  CreditCard, Search, UserCog, Receipt, Clock, AlertTriangle,
+  CreditCard, Search, UserCog, Clock, AlertTriangle, Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
@@ -95,19 +95,7 @@ export default function SuperAdminPage() {
     },
   });
 
-  // ── All Payment History ──
-  const { data: payments = [] } = useQuery({
-    queryKey: ["sa-payments"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("payment_history")
-        .select("*, organizations(name)")
-        .order("created_at", { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      return data as any[];
-    },
-  });
+  // Payment history removed - payments handled via WhatsApp
 
   if (!isSuperAdmin) return <Navigate to="/" replace />;
 
@@ -149,11 +137,8 @@ export default function SuperAdminPage() {
     qc.invalidateQueries({ queryKey: ["sa-organizations"] });
   };
 
-  const handleUpdatePlan = async (orgId: string, plan: string) => {
-    const { error } = await supabase.from("organizations").update({ plan }).eq("id", orgId);
-    if (error) { toast.error(error.message); return; }
-    toast.success(`Plan berhasil diubah ke ${plan}`);
-    qc.invalidateQueries({ queryKey: ["sa-organizations"] });
+  const handleUpdatePlan = async (_orgId: string, _plan: string) => {
+    // Plans removed - no longer applicable
   };
 
   const handleImpersonate = (orgId: string) => {
@@ -165,6 +150,16 @@ export default function SuperAdminPage() {
     const { error } = await supabase.from("subscriptions").update({ status, updated_at: new Date().toISOString() }).eq("id", subId);
     if (error) { toast.error(error.message); return; }
     toast.success(`Status langganan diubah ke ${status}`);
+    qc.invalidateQueries({ queryKey: ["sa-subscriptions"] });
+  };
+
+  const handleUpdateSubExpiry = async (subId: string, date: string) => {
+    const { error } = await supabase.from("subscriptions").update({
+      current_period_end: date,
+      updated_at: new Date().toISOString(),
+    }).eq("id", subId);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Masa aktif diperbarui");
     qc.invalidateQueries({ queryKey: ["sa-subscriptions"] });
   };
 
@@ -224,7 +219,6 @@ export default function SuperAdminPage() {
           <TabsTrigger value="orgs"><Building2 className="h-3.5 w-3.5 mr-1" /> Organisasi</TabsTrigger>
           <TabsTrigger value="users"><UserCog className="h-3.5 w-3.5 mr-1" /> User Global</TabsTrigger>
           <TabsTrigger value="subs"><CreditCard className="h-3.5 w-3.5 mr-1" /> Langganan</TabsTrigger>
-          <TabsTrigger value="payments"><Receipt className="h-3.5 w-3.5 mr-1" /> Riwayat Bayar</TabsTrigger>
           {viewOrgId && <TabsTrigger value="members"><Users className="h-3.5 w-3.5 mr-1" /> Anggota Org</TabsTrigger>}
         </TabsList>
 
@@ -258,7 +252,7 @@ export default function SuperAdminPage() {
                         <TableHead>Nama</TableHead>
                         <TableHead>Slug</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Plan</TableHead>
+                        <TableHead>Dibuat</TableHead>
                         <TableHead>Dibuat</TableHead>
                         <TableHead className="text-right">Aksi</TableHead>
                       </TableRow>
@@ -269,18 +263,7 @@ export default function SuperAdminPage() {
                           <TableCell className="font-medium">{org.name}</TableCell>
                           <TableCell className="text-muted-foreground text-xs">{org.slug}</TableCell>
                           <TableCell>{statusBadge(org.status)}</TableCell>
-                          <TableCell>
-                            <Select value={org.plan} onValueChange={(v) => handleUpdatePlan(org.id, v)}>
-                              <SelectTrigger className="w-28 h-7 text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="starter">Starter</SelectItem>
-                                <SelectItem value="professional">Professional</SelectItem>
-                                <SelectItem value="enterprise">Enterprise</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{formatDate(org.created_at)}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">{formatDate(org.created_at)}</TableCell>
                           <TableCell className="text-right space-x-1">
                             <Button size="icon" variant="ghost" className="h-7 w-7" title="Lihat anggota"
@@ -400,11 +383,9 @@ export default function SuperAdminPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Organisasi</TableHead>
-                      <TableHead>Plan</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Trial Berakhir</TableHead>
-                      <TableHead>Periode</TableHead>
-                      <TableHead>Jumlah</TableHead>
+                      <TableHead>Masa Aktif Hingga</TableHead>
                       <TableHead className="text-right">Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -414,19 +395,22 @@ export default function SuperAdminPage() {
                       return (
                         <TableRow key={s.id} className={isTrialExpiring ? "bg-amber-500/5" : ""}>
                           <TableCell className="font-medium">{s.organizations?.name || "—"}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="capitalize">{s.plan}</Badge>
-                          </TableCell>
                           <TableCell>{statusBadge(s.status)}</TableCell>
                           <TableCell className="text-xs">
                             <span className={isTrialExpiring ? "text-amber-600 font-medium" : "text-muted-foreground"}>
                               {formatDate(s.trial_ends_at)}
                             </span>
                           </TableCell>
-                          <TableCell className="text-xs text-muted-foreground">
-                            {s.current_period_start ? `${formatDate(s.current_period_start)} - ${formatDate(s.current_period_end)}` : "—"}
+                          <TableCell>
+                            <Input
+                              type="date"
+                              className="h-7 w-36 text-xs"
+                              defaultValue={s.current_period_end ? format(new Date(s.current_period_end), "yyyy-MM-dd") : ""}
+                              onChange={(e) => {
+                                if (e.target.value) handleUpdateSubExpiry(s.id, e.target.value);
+                              }}
+                            />
                           </TableCell>
-                          <TableCell className="text-sm font-medium">{formatCurrency(s.amount)}</TableCell>
                           <TableCell className="text-right">
                             <Select value={s.status} onValueChange={(v) => handleUpdateSubStatus(s.id, v)}>
                               <SelectTrigger className="w-28 h-7 text-xs">
@@ -444,7 +428,7 @@ export default function SuperAdminPage() {
                       );
                     })}
                     {filteredSubs.length === 0 && (
-                      <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Tidak ada langganan ditemukan</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Tidak ada langganan ditemukan</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
@@ -453,47 +437,6 @@ export default function SuperAdminPage() {
           </Card>
         </TabsContent>
 
-        {/* ── TAB: Riwayat Pembayaran ── */}
-        <TabsContent value="payments" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Riwayat Pembayaran</CardTitle>
-              <CardDescription>100 transaksi terakhir di seluruh platform</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Organisasi</TableHead>
-                      <TableHead>Jumlah</TableHead>
-                      <TableHead>Metode</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Tanggal</TableHead>
-                      <TableHead>Dibayar</TableHead>
-                      <TableHead>Referensi</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {payments.length === 0 ? (
-                      <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Belum ada riwayat pembayaran</TableCell></TableRow>
-                    ) : payments.map((p: any) => (
-                      <TableRow key={p.id}>
-                        <TableCell className="font-medium">{p.organizations?.name || "—"}</TableCell>
-                        <TableCell className="font-medium">{formatCurrency(p.amount)}</TableCell>
-                        <TableCell className="text-xs">{p.payment_method || "—"}</TableCell>
-                        <TableCell>{statusBadge(p.status)}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{formatDate(p.created_at)}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{formatDate(p.paid_at)}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground truncate max-w-[120px]">{p.duitku_reference || "—"}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* ── TAB: Anggota Org ── */}
         {viewOrgId && (

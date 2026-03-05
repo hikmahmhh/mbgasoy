@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg } from "@/hooks/useOrg";
-import { Link } from "react-router-dom";
-import { AlertTriangle, CreditCard } from "lucide-react";
+import { AlertTriangle, MessageCircle } from "lucide-react";
+import { WA_PAYMENT_LINK, WA_PAYMENT_NUMBER } from "@/lib/planLimits";
 
 export default function SubscriptionGuard({ children }: { children: React.ReactNode }) {
   const { currentOrgId, isSuperAdmin } = useOrg();
@@ -21,11 +21,8 @@ export default function SubscriptionGuard({ children }: { children: React.ReactN
   });
 
   if (isLoading) return null;
-
-  // Super admins bypass
   if (isSuperAdmin) return <>{children}</>;
 
-  // Check if expired
   const isExpired =
     subscription?.status === "expired" ||
     subscription?.status === "cancelled" ||
@@ -41,15 +38,17 @@ export default function SubscriptionGuard({ children }: { children: React.ReactN
         </div>
         <h2 className="text-xl font-bold text-foreground mb-2">Akses Terbatas</h2>
         <p className="text-sm text-muted-foreground max-w-md mb-6">
-          Masa trial atau langganan Anda telah berakhir. Upgrade paket untuk melanjutkan menggunakan semua fitur.
+          Masa trial atau langganan Anda telah berakhir. Hubungi tim Pytagotech untuk melakukan pembayaran dan mengaktifkan kembali akun Anda.
         </p>
-        <Link
-          to="/settings"
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+        <a
+          href={WA_PAYMENT_LINK}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors"
         >
-          <CreditCard className="h-4 w-4" />
-          Kelola Langganan
-        </Link>
+          <MessageCircle className="h-4 w-4" />
+          Hubungi via WhatsApp ({WA_PAYMENT_NUMBER})
+        </a>
       </div>
     );
   }

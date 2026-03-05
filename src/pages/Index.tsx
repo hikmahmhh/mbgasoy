@@ -255,9 +255,10 @@ export default function Dashboard() {
               {trialDaysLeft <= 2 ? "Segera upgrade untuk tetap menggunakan layanan." : "Nikmati semua fitur selama masa trial."}
             </p>
           </div>
-          <Link to="/settings" className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-colors">
-            {trialDaysLeft <= 2 ? "Upgrade Sekarang" : "Lihat Paket"}
-          </Link>
+          <a href="https://wa.me/6288102645497?text=Halo%20Tim%20Pytagotech%2C%20saya%20ingin%20upgrade%20langganan." target="_blank" rel="noopener noreferrer"
+            className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-colors">
+            {trialDaysLeft <= 2 ? "Hubungi WA" : "Lihat Info"}
+          </a>
         </motion.div>
       )}
 
@@ -269,9 +270,10 @@ export default function Dashboard() {
             <p className="text-sm font-bold text-foreground">Langganan Expired</p>
             <p className="text-xs text-muted-foreground">Akses terbatas. Silakan upgrade untuk melanjutkan.</p>
           </div>
-          <Link to="/settings" className="rounded-xl bg-destructive px-4 py-2 text-xs font-bold text-destructive-foreground hover:bg-destructive/90 transition-colors">
-            Upgrade
-          </Link>
+          <a href="https://wa.me/6288102645497?text=Halo%20Tim%20Pytagotech%2C%20langganan%20saya%20expired." target="_blank" rel="noopener noreferrer"
+            className="rounded-xl bg-destructive px-4 py-2 text-xs font-bold text-destructive-foreground hover:bg-destructive/90 transition-colors">
+            Hubungi WA
+          </a>
         </motion.div>
       )}
 
