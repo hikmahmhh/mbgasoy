@@ -49,6 +49,7 @@ function ProtectedRoutes() {
           <Route path="/schools" element={<SubscriptionGuard><SchoolsPage /></SubscriptionGuard>} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/super-admin" element={<SuperAdminPage />} />
+          <Route path="/home" element={<SmartRedirect />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AppLayout>
