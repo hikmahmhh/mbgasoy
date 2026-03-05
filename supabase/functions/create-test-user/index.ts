@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email: 'testing@email.com',
     password: 'Test1234',
-    phone: '081234567890',
+    phone: '+6281234567890',
     email_confirm: true,
     phone_confirm: true,
     user_metadata: { full_name: 'Test User' }
