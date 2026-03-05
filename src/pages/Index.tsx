@@ -270,9 +270,10 @@ export default function Dashboard() {
             <p className="text-sm font-bold text-foreground">Langganan Expired</p>
             <p className="text-xs text-muted-foreground">Akses terbatas. Silakan upgrade untuk melanjutkan.</p>
           </div>
-          <Link to="/settings" className="rounded-xl bg-destructive px-4 py-2 text-xs font-bold text-destructive-foreground hover:bg-destructive/90 transition-colors">
-            Upgrade
-          </Link>
+          <a href="https://wa.me/6288102645497?text=Halo%20Tim%20Pytagotech%2C%20langganan%20saya%20expired." target="_blank" rel="noopener noreferrer"
+            className="rounded-xl bg-destructive px-4 py-2 text-xs font-bold text-destructive-foreground hover:bg-destructive/90 transition-colors">
+            Hubungi WA
+          </a>
         </motion.div>
       )}
 
