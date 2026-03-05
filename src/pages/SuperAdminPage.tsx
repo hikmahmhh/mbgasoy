@@ -13,11 +13,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Shield, Building2, Users, Plus, Pencil, Ban, CheckCircle, Eye,
-  CreditCard, Search, UserCog, Clock, AlertTriangle, Calendar,
+  CreditCard, Search, UserCog, Clock, AlertTriangle, CalendarPlus, Phone,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
-import { format } from "date-fns";
+import { format, addDays, addMonths } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 
 export default function SuperAdminPage() {
@@ -27,13 +27,12 @@ export default function SuperAdminPage() {
   const [editOrg, setEditOrg] = useState<any>(null);
   const [viewOrgId, setViewOrgId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("orgs");
+  const [expiryDialogSub, setExpiryDialogSub] = useState<any>(null);
 
   // Search states
   const [orgSearch, setOrgSearch] = useState("");
   const [userSearch, setUserSearch] = useState("");
   const [subSearch, setSubSearch] = useState("");
-
-  // Guard moved after all hooks
 
   // ── All Organizations ──
   const { data: organizations = [], isLoading } = useQuery({
@@ -45,7 +44,7 @@ export default function SuperAdminPage() {
     },
   });
 
-  // ── All Org Members (global) ──
+  // ── All Org Members (global) with profiles ──
   const { data: allMembers = [] } = useQuery({
     queryKey: ["sa-all-members"],
     queryFn: async () => {
@@ -95,9 +94,16 @@ export default function SuperAdminPage() {
     },
   });
 
-  // Payment history removed - payments handled via WhatsApp
-
   if (!isSuperAdmin) return <Navigate to="/" replace />;
+
+  // ── Helper: get owner (admin) of an org ──
+  const getOrgOwner = (orgId: string) => {
+    const admin = allMembers.find(m => m.org_id === orgId && m.role === "admin");
+    return admin ? {
+      name: admin.profiles?.full_name || "—",
+      phone: admin.profiles?.phone || "—",
+    } : { name: "—", phone: "—" };
+  };
 
   // ── Stats ──
   const totalOrgs = organizations.length;
@@ -124,7 +130,7 @@ export default function SuperAdminPage() {
   const filteredSubs = subscriptions.filter(s => {
     const orgName = s.organizations?.name || "";
     const q = subSearch.toLowerCase();
-    return orgName.toLowerCase().includes(q) || s.plan.toLowerCase().includes(q) || s.status.toLowerCase().includes(q);
+    return orgName.toLowerCase().includes(q) || s.status.toLowerCase().includes(q);
   });
 
   const isSuperAdminUser = (userId: string) => allRoles.some(r => r.user_id === userId && r.role === "super_admin");
@@ -137,10 +143,6 @@ export default function SuperAdminPage() {
     qc.invalidateQueries({ queryKey: ["sa-organizations"] });
   };
 
-  const handleUpdatePlan = async (_orgId: string, _plan: string) => {
-    // Plans removed - no longer applicable
-  };
-
   const handleImpersonate = (orgId: string) => {
     switchOrg(orgId);
     toast.success("Anda sekarang melihat sebagai organisasi ini");
@@ -149,18 +151,41 @@ export default function SuperAdminPage() {
   const handleUpdateSubStatus = async (subId: string, status: string) => {
     const { error } = await supabase.from("subscriptions").update({ status, updated_at: new Date().toISOString() }).eq("id", subId);
     if (error) { toast.error(error.message); return; }
+    // If activating, also activate the org
+    if (status === "active") {
+      const sub = subscriptions.find(s => s.id === subId);
+      if (sub) {
+        await supabase.from("organizations").update({ status: "active" }).eq("id", sub.org_id);
+        qc.invalidateQueries({ queryKey: ["sa-organizations"] });
+      }
+    }
     toast.success(`Status langganan diubah ke ${status}`);
     qc.invalidateQueries({ queryKey: ["sa-subscriptions"] });
   };
 
-  const handleUpdateSubExpiry = async (subId: string, date: string) => {
+  const handleSetExpiry = async (subId: string, date: string) => {
     const { error } = await supabase.from("subscriptions").update({
       current_period_end: date,
+      status: "active",
       updated_at: new Date().toISOString(),
     }).eq("id", subId);
     if (error) { toast.error(error.message); return; }
-    toast.success("Masa aktif diperbarui");
+    // Also activate org
+    const sub = subscriptions.find(s => s.id === subId);
+    if (sub) {
+      await supabase.from("organizations").update({ status: "active" }).eq("id", sub.org_id);
+      qc.invalidateQueries({ queryKey: ["sa-organizations"] });
+    }
+    toast.success("Masa aktif diperbarui & langganan diaktifkan");
     qc.invalidateQueries({ queryKey: ["sa-subscriptions"] });
+    setExpiryDialogSub(null);
+  };
+
+  const handleQuickExtend = async (subId: string, days: number) => {
+    const sub = subscriptions.find(s => s.id === subId);
+    const baseDate = sub?.current_period_end ? new Date(sub.current_period_end) : new Date();
+    const newDate = addDays(baseDate, days);
+    await handleSetExpiry(subId, format(newDate, "yyyy-MM-dd"));
   };
 
   const handleRemoveMember = async (memberId: string) => {
@@ -171,12 +196,11 @@ export default function SuperAdminPage() {
   };
 
   const formatDate = (d: string | null) => d ? format(new Date(d), "dd MMM yyyy", { locale: idLocale }) : "—";
-  const formatCurrency = (n: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
 
   const statusBadge = (status: string) => {
     const map: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
       active: "default", trial: "secondary", expired: "destructive", suspended: "destructive",
-      pending: "outline", paid: "default", failed: "destructive",
+      pending: "outline", paid: "default", failed: "destructive", cancelled: "destructive",
     };
     return <Badge variant={map[status] || "outline"}>{status}</Badge>;
   };
@@ -250,41 +274,52 @@ export default function SuperAdminPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Nama</TableHead>
-                        <TableHead>Slug</TableHead>
+                        <TableHead>Owner (Admin)</TableHead>
+                        <TableHead>No. HP Owner</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Dibuat</TableHead>
                         <TableHead>Dibuat</TableHead>
                         <TableHead className="text-right">Aksi</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredOrgs.map(org => (
-                        <TableRow key={org.id}>
-                          <TableCell className="font-medium">{org.name}</TableCell>
-                          <TableCell className="text-muted-foreground text-xs">{org.slug}</TableCell>
-                          <TableCell>{statusBadge(org.status)}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground">{formatDate(org.created_at)}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground">{formatDate(org.created_at)}</TableCell>
-                          <TableCell className="text-right space-x-1">
-                            <Button size="icon" variant="ghost" className="h-7 w-7" title="Lihat anggota"
-                              onClick={() => { setViewOrgId(org.id); setActiveTab("members"); }}>
-                              <Eye className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button size="icon" variant="ghost" className="h-7 w-7" title="Edit"
-                              onClick={() => { setEditOrg(org); setOrgDialogOpen(true); }}>
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button size="icon" variant="ghost" className="h-7 w-7" title={org.status === "active" ? "Suspend" : "Aktifkan"}
-                              onClick={() => handleToggleStatus(org.id, org.status)}>
-                              {org.status === "active" ? <Ban className="h-3.5 w-3.5 text-destructive" /> : <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />}
-                            </Button>
-                            <Button size="sm" variant="outline" className="h-7 text-xs"
-                              onClick={() => handleImpersonate(org.id)}>
-                              Login As
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {filteredOrgs.map(org => {
+                        const owner = getOrgOwner(org.id);
+                        return (
+                          <TableRow key={org.id}>
+                            <TableCell className="font-medium">{org.name}</TableCell>
+                            <TableCell className="text-sm">{owner.name}</TableCell>
+                            <TableCell className="text-sm">
+                              {owner.phone !== "—" ? (
+                                <a href={`https://wa.me/${owner.phone.replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-primary hover:underline">
+                                  <Phone className="h-3 w-3" />
+                                  {owner.phone}
+                                </a>
+                              ) : "—"}
+                            </TableCell>
+                            <TableCell>{statusBadge(org.status)}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground">{formatDate(org.created_at)}</TableCell>
+                            <TableCell className="text-right space-x-1">
+                              <Button size="icon" variant="ghost" className="h-7 w-7" title="Lihat anggota"
+                                onClick={() => { setViewOrgId(org.id); setActiveTab("members"); }}>
+                                <Eye className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7" title="Edit"
+                                onClick={() => { setEditOrg(org); setOrgDialogOpen(true); }}>
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7" title={org.status === "active" ? "Suspend" : "Aktifkan"}
+                                onClick={() => handleToggleStatus(org.id, org.status)}>
+                                {org.status === "active" ? <Ban className="h-3.5 w-3.5 text-destructive" /> : <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />}
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-7 text-xs"
+                                onClick={() => handleImpersonate(org.id)}>
+                                Login As
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                       {filteredOrgs.length === 0 && (
                         <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Tidak ada organisasi ditemukan</TableCell></TableRow>
                       )}
@@ -369,11 +404,11 @@ export default function SuperAdminPage() {
             <CardHeader className="flex-row items-center justify-between gap-3 flex-wrap">
               <div>
                 <CardTitle>Manajemen Langganan</CardTitle>
-                <CardDescription>Seluruh langganan dan status trial di platform</CardDescription>
+                <CardDescription>Kelola status dan masa aktif langganan setiap organisasi</CardDescription>
               </div>
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-                <Input placeholder="Cari organisasi, plan, status..." value={subSearch} onChange={e => setSubSearch(e.target.value)}
+                <Input placeholder="Cari organisasi, status..." value={subSearch} onChange={e => setSubSearch(e.target.value)}
                   className="pl-8 h-9 w-56 text-sm" />
               </div>
             </CardHeader>
@@ -383,6 +418,7 @@ export default function SuperAdminPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Organisasi</TableHead>
+                      <TableHead>Owner</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Trial Berakhir</TableHead>
                       <TableHead>Masa Aktif Hingga</TableHead>
@@ -392,26 +428,21 @@ export default function SuperAdminPage() {
                   <TableBody>
                     {filteredSubs.map((s: any) => {
                       const isTrialExpiring = s.status === "trial" && new Date(s.trial_ends_at) < new Date(Date.now() + 3 * 86400000);
+                      const isExpired = s.status === "expired" || s.status === "cancelled";
+                      const owner = getOrgOwner(s.org_id);
                       return (
-                        <TableRow key={s.id} className={isTrialExpiring ? "bg-amber-500/5" : ""}>
+                        <TableRow key={s.id} className={isExpired ? "bg-destructive/5" : isTrialExpiring ? "bg-amber-500/5" : ""}>
                           <TableCell className="font-medium">{s.organizations?.name || "—"}</TableCell>
-                          <TableCell>{statusBadge(s.status)}</TableCell>
                           <TableCell className="text-xs">
-                            <span className={isTrialExpiring ? "text-amber-600 font-medium" : "text-muted-foreground"}>
-                              {formatDate(s.trial_ends_at)}
-                            </span>
+                            <div>{owner.name}</div>
+                            {owner.phone !== "—" && (
+                              <a href={`https://wa.me/${owner.phone.replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer"
+                                className="text-primary hover:underline flex items-center gap-0.5">
+                                <Phone className="h-2.5 w-2.5" /> {owner.phone}
+                              </a>
+                            )}
                           </TableCell>
                           <TableCell>
-                            <Input
-                              type="date"
-                              className="h-7 w-36 text-xs"
-                              defaultValue={s.current_period_end ? format(new Date(s.current_period_end), "yyyy-MM-dd") : ""}
-                              onChange={(e) => {
-                                if (e.target.value) handleUpdateSubExpiry(s.id, e.target.value);
-                              }}
-                            />
-                          </TableCell>
-                          <TableCell className="text-right">
                             <Select value={s.status} onValueChange={(v) => handleUpdateSubStatus(s.id, v)}>
                               <SelectTrigger className="w-28 h-7 text-xs">
                                 <SelectValue />
@@ -424,11 +455,37 @@ export default function SuperAdminPage() {
                               </SelectContent>
                             </Select>
                           </TableCell>
+                          <TableCell className="text-xs">
+                            <span className={isTrialExpiring ? "text-amber-600 font-medium" : "text-muted-foreground"}>
+                              {formatDate(s.trial_ends_at)}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-xs font-medium">
+                            {s.current_period_end ? (
+                              <span className={new Date(s.current_period_end) < new Date() ? "text-destructive" : "text-foreground"}>
+                                {formatDate(s.current_period_end)}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">Belum diset</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button size="sm" variant="outline" className="h-7 text-xs"
+                                onClick={() => handleQuickExtend(s.id, 30)} title="Tambah 30 hari">
+                                +30 hari
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-7 text-xs"
+                                onClick={() => setExpiryDialogSub(s)} title="Atur masa aktif">
+                                <CalendarPlus className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       );
                     })}
                     {filteredSubs.length === 0 && (
-                      <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Tidak ada langganan ditemukan</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Tidak ada langganan ditemukan</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
@@ -436,7 +493,6 @@ export default function SuperAdminPage() {
             </CardContent>
           </Card>
         </TabsContent>
-
 
         {/* ── TAB: Anggota Org ── */}
         {viewOrgId && (
@@ -479,7 +535,90 @@ export default function SuperAdminPage() {
         org={editOrg}
         onSaved={() => qc.invalidateQueries({ queryKey: ["sa-organizations"] })}
       />
+
+      {/* ── Expiry Date Dialog ── */}
+      <ExpiryDialog
+        sub={expiryDialogSub}
+        onClose={() => setExpiryDialogSub(null)}
+        onSave={handleSetExpiry}
+        onQuickExtend={handleQuickExtend}
+      />
     </div>
+  );
+}
+
+function ExpiryDialog({ sub, onClose, onSave, onQuickExtend }: {
+  sub: any; onClose: () => void;
+  onSave: (subId: string, date: string) => Promise<void>;
+  onQuickExtend: (subId: string, days: number) => Promise<void>;
+}) {
+  const [customDate, setCustomDate] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (sub?.current_period_end) {
+      setCustomDate(format(new Date(sub.current_period_end), "yyyy-MM-dd"));
+    } else {
+      setCustomDate(format(addMonths(new Date(), 1), "yyyy-MM-dd"));
+    }
+  }, [sub]);
+
+  const handleSave = async () => {
+    if (!customDate) return;
+    setLoading(true);
+    await onSave(sub.id, customDate);
+    setLoading(false);
+  };
+
+  if (!sub) return null;
+
+  return (
+    <Dialog open={!!sub} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Atur Masa Aktif</DialogTitle>
+          <DialogDescription>{sub.organizations?.name || "Organisasi"}</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="text-xs text-muted-foreground">
+            Masa aktif saat ini: <span className="font-medium text-foreground">
+              {sub.current_period_end ? format(new Date(sub.current_period_end), "dd MMM yyyy") : "Belum diset"}
+            </span>
+          </div>
+
+          {/* Quick buttons */}
+          <div className="space-y-2">
+            <Label className="text-xs">Perpanjang cepat:</Label>
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { label: "+7 hari", days: 7 },
+                { label: "+30 hari", days: 30 },
+                { label: "+90 hari", days: 90 },
+                { label: "+1 tahun", days: 365 },
+              ].map(opt => (
+                <Button key={opt.days} size="sm" variant="outline" className="text-xs"
+                  onClick={async () => { setLoading(true); await onQuickExtend(sub.id, opt.days); setLoading(false); }}
+                  disabled={loading}>
+                  {opt.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom date */}
+          <div className="space-y-1">
+            <Label className="text-xs">Atau pilih tanggal spesifik:</Label>
+            <Input type="date" value={customDate} onChange={e => setCustomDate(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Batal</Button>
+          <Button onClick={handleSave} disabled={loading || !customDate}>
+            {loading ? "Menyimpan..." : "Simpan & Aktifkan"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
