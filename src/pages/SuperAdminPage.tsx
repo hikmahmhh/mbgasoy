@@ -137,11 +137,8 @@ export default function SuperAdminPage() {
     qc.invalidateQueries({ queryKey: ["sa-organizations"] });
   };
 
-  const handleUpdatePlan = async (orgId: string, plan: string) => {
-    const { error } = await supabase.from("organizations").update({ plan }).eq("id", orgId);
-    if (error) { toast.error(error.message); return; }
-    toast.success(`Plan berhasil diubah ke ${plan}`);
-    qc.invalidateQueries({ queryKey: ["sa-organizations"] });
+  const handleUpdatePlan = async (_orgId: string, _plan: string) => {
+    // Plans removed - no longer applicable
   };
 
   const handleImpersonate = (orgId: string) => {
