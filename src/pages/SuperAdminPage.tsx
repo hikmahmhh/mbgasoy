@@ -263,18 +263,7 @@ export default function SuperAdminPage() {
                           <TableCell className="font-medium">{org.name}</TableCell>
                           <TableCell className="text-muted-foreground text-xs">{org.slug}</TableCell>
                           <TableCell>{statusBadge(org.status)}</TableCell>
-                          <TableCell>
-                            <Select value={org.plan} onValueChange={(v) => handleUpdatePlan(org.id, v)}>
-                              <SelectTrigger className="w-28 h-7 text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="starter">Starter</SelectItem>
-                                <SelectItem value="professional">Professional</SelectItem>
-                                <SelectItem value="enterprise">Enterprise</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{formatDate(org.created_at)}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">{formatDate(org.created_at)}</TableCell>
                           <TableCell className="text-right space-x-1">
                             <Button size="icon" variant="ghost" className="h-7 w-7" title="Lihat anggota"
