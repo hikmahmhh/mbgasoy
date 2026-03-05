@@ -383,11 +383,9 @@ export default function SuperAdminPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Organisasi</TableHead>
-                      <TableHead>Plan</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Trial Berakhir</TableHead>
-                      <TableHead>Periode</TableHead>
-                      <TableHead>Jumlah</TableHead>
+                      <TableHead>Masa Aktif Hingga</TableHead>
                       <TableHead className="text-right">Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
