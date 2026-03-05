@@ -395,19 +395,22 @@ export default function SuperAdminPage() {
                       return (
                         <TableRow key={s.id} className={isTrialExpiring ? "bg-amber-500/5" : ""}>
                           <TableCell className="font-medium">{s.organizations?.name || "—"}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="capitalize">{s.plan}</Badge>
-                          </TableCell>
                           <TableCell>{statusBadge(s.status)}</TableCell>
                           <TableCell className="text-xs">
                             <span className={isTrialExpiring ? "text-amber-600 font-medium" : "text-muted-foreground"}>
                               {formatDate(s.trial_ends_at)}
                             </span>
                           </TableCell>
-                          <TableCell className="text-xs text-muted-foreground">
-                            {s.current_period_start ? `${formatDate(s.current_period_start)} - ${formatDate(s.current_period_end)}` : "—"}
+                          <TableCell>
+                            <Input
+                              type="date"
+                              className="h-7 w-36 text-xs"
+                              defaultValue={s.current_period_end ? format(new Date(s.current_period_end), "yyyy-MM-dd") : ""}
+                              onChange={(e) => {
+                                if (e.target.value) handleUpdateSubExpiry(s.id, e.target.value);
+                              }}
+                            />
                           </TableCell>
-                          <TableCell className="text-sm font-medium">{formatCurrency(s.amount)}</TableCell>
                           <TableCell className="text-right">
                             <Select value={s.status} onValueChange={(v) => handleUpdateSubStatus(s.id, v)}>
                               <SelectTrigger className="w-28 h-7 text-xs">
@@ -425,7 +428,7 @@ export default function SuperAdminPage() {
                       );
                     })}
                     {filteredSubs.length === 0 && (
-                      <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Tidak ada langganan ditemukan</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Tidak ada langganan ditemukan</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
