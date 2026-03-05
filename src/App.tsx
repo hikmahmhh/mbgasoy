@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import { OrgProvider } from "@/hooks/useOrg";
+import { OrgProvider, useOrg } from "@/hooks/useOrg";
 import AppLayout from "@/components/AppLayout";
 import Index from "./pages/Index";
 import MenuPage from "./pages/MenuPage";
@@ -49,6 +49,7 @@ function ProtectedRoutes() {
           <Route path="/schools" element={<SubscriptionGuard><SchoolsPage /></SubscriptionGuard>} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/super-admin" element={<SuperAdminPage />} />
+          <Route path="/home" element={<SmartRedirect />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AppLayout>
@@ -59,14 +60,21 @@ function ProtectedRoutes() {
 function LandingRoute() {
   const { session, loading } = useAuth();
   if (loading) return null;
-  if (session) return <Navigate to="/dashboard" replace />;
+  if (session) return <Navigate to="/home" replace />;
   return <LandingPage />;
+}
+
+function SmartRedirect() {
+  const { isSuperAdmin, loading } = useOrg();
+  if (loading) return null;
+  if (isSuperAdmin) return <Navigate to="/super-admin" replace />;
+  return <Navigate to="/dashboard" replace />;
 }
 
 function AuthRoute() {
   const { session, loading } = useAuth();
   if (loading) return null;
-  if (session) return <Navigate to="/dashboard" replace />;
+  if (session) return <Navigate to="/home" replace />;
   return <AuthPage />;
 }
 

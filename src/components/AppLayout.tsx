@@ -68,7 +68,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         )}
 
         <nav className="flex-1 space-y-1 px-3 py-4">
-          {navItems.map((item) => {
+          {!isSuperAdmin && navItems.map((item) => {
             const active = location.pathname === item.path;
             return (
               <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)}
@@ -92,7 +92,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
               )}>
               <Shield className="h-4.5 w-4.5" />
-              Super Admin
+              Panel Pengelola
             </Link>
           )}
         </nav>
