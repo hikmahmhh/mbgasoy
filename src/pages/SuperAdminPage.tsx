@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Shield, Building2, Users, Plus, Pencil, Ban, CheckCircle, Eye,
-  CreditCard, Search, UserCog, Receipt, Clock, AlertTriangle,
+  CreditCard, Search, UserCog, Clock, AlertTriangle, Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
