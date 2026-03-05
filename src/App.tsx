@@ -63,6 +63,13 @@ function LandingRoute() {
   return <LandingPage />;
 }
 
+function SmartRedirect() {
+  const { isSuperAdmin, loading } = useOrg();
+  if (loading) return null;
+  if (isSuperAdmin) return <Navigate to="/super-admin" replace />;
+  return <Navigate to="/dashboard" replace />;
+}
+
 function AuthRoute() {
   const { session, loading } = useAuth();
   if (loading) return null;
