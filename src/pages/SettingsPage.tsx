@@ -17,7 +17,7 @@ import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
 import { format, differenceInDays } from "date-fns";
 import { useActivityLog } from "@/hooks/useActivityLog";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
-import { PLAN_LIMITS, formatPrice, type PlanLimits } from "@/lib/planLimits";
+import { WA_PAYMENT_LINK, WA_PAYMENT_NUMBER } from "@/lib/planLimits";
 
 function ProfileTab() {
   const { user } = useAuth();
