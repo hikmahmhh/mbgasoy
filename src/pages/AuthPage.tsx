@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ChefHat, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { ChefHat, Mail, Lock, User, Eye, EyeOff, Phone } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AuthPage() {
